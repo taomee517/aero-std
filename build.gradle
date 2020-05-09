@@ -1,0 +1,57 @@
+allprojects {
+    ext {
+        springbootVersion = '2.2.4.RELEASE'
+        nettyVersion = '4.1.48.Final'
+        guavaVersion = '28.1-jre'
+        commonLang3Version = '3.9'
+        poiVersion = '4.1.0'
+        lombokVersion = '1.18.10'
+        junitVersion = '4.12'
+    }
+
+    apply plugin: "java"
+    group 'com.aero'
+    version '1.0-SNAPSHOT'
+    sourceCompatibility = 1.8
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'utf-8'
+    }
+
+
+    configurations.all{
+        resolutionStrategy(){
+            //将冲突解决策略改为发生冲突时报错
+            failOnVersionConflict()
+            force "org.slf4j:slf4j-api:1.7.30"
+        }
+    }
+
+    // 冲突报错 + 以下任务 + 命令行搜索
+    // gradlew allDepInsight  --configuration compile --dependency ${keyword}
+    //可以搜索出某个jar包被哪些依赖引用，然后用于解决依赖冲突
+    //subprojects和allprojects的效果一样
+    task allDepInsight(type: DependencyInsightReportTask){
+        doFirst {}
+    }
+
+
+    repositories {
+        mavenLocal()
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+        mavenCentral()
+    }
+
+
+    dependencies {
+        compile("org.springframework.boot:spring-boot-starter-web:${springbootVersion}") {
+            exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        }
+        compile group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2', version: "${springbootVersion}"
+
+        // lombok
+        compile group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
+        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+        testCompile group: 'junit', name: 'junit', version: "${junitVersion}"
+    }
+}

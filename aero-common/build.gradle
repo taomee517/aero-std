@@ -1,0 +1,10 @@
+dependencies {
+    //引入项目内的其它模块
+    compile project(":aero-beans")
+
+    // netty-all
+    compile group: 'io.netty', name: 'netty-all', version: "${nettyVersion}"
+
+    // common-lang3
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: "${commonLang3Version}"
+}

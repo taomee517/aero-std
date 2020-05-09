@@ -1,0 +1,6 @@
+server:
+  port: 15661
+
+netty:
+  monitor:
+    port: 26321

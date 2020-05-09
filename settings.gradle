@@ -1,0 +1,6 @@
+rootProject.name = 'aero-std'
+include 'aero-server'
+include 'aero-client'
+include 'aero-common'
+include 'aero-beans'
+

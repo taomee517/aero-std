@@ -1,0 +1,4 @@
+dependencies {
+    //引入项目内的其它模块
+    compile project(":aero-common")
+}
