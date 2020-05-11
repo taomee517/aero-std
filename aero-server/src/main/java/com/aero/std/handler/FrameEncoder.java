@@ -1,6 +1,7 @@
 package com.aero.std.handler;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
  * @title FrameEncoder
  * @date 2020/5/8 11:26
  */
+@ChannelHandler.Sharable
 @Component
 public class FrameEncoder extends MessageToByteEncoder {
     @Override

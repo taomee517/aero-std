@@ -59,6 +59,18 @@ public class BytesUtil {
         return bc;
     }
 
+    public static byte[] imei2Bytes(String imei){
+        Long longVal = Long.parseLong(imei,16);
+        byte[] result = new byte[8];
+        String imeiHex = ZeroFillUtil.zeroFillStr(imei,16);
+        for(int i=0;i<imeiHex.length();i+=2){
+            String sHex = imeiHex.substring(i,i+2);
+            byte b = Byte.parseByte(sHex,16);
+            result[i/2] = b;
+        }
+        return result;
+    }
+
     public static String toShowString(byte[] bytes){
         int lastIndex = bytes.length-1;
         StringBuilder sb = new StringBuilder();
@@ -70,5 +82,12 @@ public class BytesUtil {
         sb.append(bytes[lastIndex]);
         sb.append("]");
         return sb.toString();
+    }
+
+    public static void main(String[] args) {
+        String imei = "813463346541368";
+        byte[] result = imei2Bytes(imei);
+        System.out.println(toShowString(result));
+        System.out.println(bytes2Hex(result));
     }
 }

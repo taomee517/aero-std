@@ -1,4 +1,4 @@
-package com.aero.std.netty;
+package com.aero.std.server;
 
 import com.aero.std.common.constants.AeroConst;
 import com.aero.std.context.ProtocolContext;
@@ -52,7 +52,7 @@ public class NettyServer implements SmartLifecycle {
                             ChannelPipeline pipeline = nioSocketChannel.pipeline();
                             pipeline.addLast("tcp-dispatch", handlers.tcpDispatchHandler);
                             pipeline.addLast("encoder", handlers.frameEncoder);
-                            pipeline.addLast("decoder", new DelimiterBasedFrameDecoder(AeroConst.MAX_LENGTH, Unpooled.buffer(1).writeByte(AeroConst.SIGN_CODE)));
+//                            pipeline.addLast("decoder", new DelimiterBasedFrameDecoder(AeroConst.MAX_LENGTH, Unpooled.buffer(1).writeByte(AeroConst.SIGN_CODE)));
                             pipeline.addLast("split", new FrameSplitHandler());
                             pipeline.addLast("validator", handlers.contentValidateHandler);
                             pipeline.addLast("head", handlers.headerParseHandler);

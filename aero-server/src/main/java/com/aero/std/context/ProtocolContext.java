@@ -4,6 +4,7 @@ import com.aero.std.protocol.IProtocol;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,6 +16,7 @@ import java.util.Set;
  * @title SpringContextUtil
  * @date 2020/5/8 14:42
  */
+@Configuration
 public class ProtocolContext implements ApplicationContextAware {
     public static ApplicationContext context;
     private static Map<Integer, IProtocol> PORT_PROTOCOL_MAP = new HashMap<>();

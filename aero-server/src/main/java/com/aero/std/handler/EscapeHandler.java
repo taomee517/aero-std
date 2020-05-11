@@ -1,5 +1,6 @@
 package com.aero.std.handler;
 
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
  * @date 2020/5/8 11:23
  */
 @Component
+@ChannelHandler.Sharable
 public class EscapeHandler extends ChannelOutboundHandlerAdapter {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
