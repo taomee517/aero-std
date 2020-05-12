@@ -59,6 +59,23 @@ public class BytesUtil {
         return bc;
     }
 
+    public static boolean arrayEqual(byte[] arr1, byte[] arr2){
+        if(arr1.length!=arr2.length){
+            return false;
+        }
+        if(arr1==null && arr2 == null){
+            return true;
+        }
+        for(int i=0;i<arr1.length;i++){
+            byte b1 = arr1[i];
+            byte b2 = arr2[i];
+            if(b1!=b2){
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static byte[] imei2Bytes(String imei){
         Long longVal = Long.parseLong(imei,16);
         byte[] result = new byte[8];
@@ -69,6 +86,16 @@ public class BytesUtil {
             result[i/2] = b;
         }
         return result;
+    }
+
+    public static String bytes2Imei(byte[] bytes){
+        StringBuilder sb = new StringBuilder();
+        for(byte b: bytes){
+            String ss = Integer.toHexString(b);
+            ss = ZeroFillUtil.zeroFillStr(ss,2);
+            sb.append(ss);
+        }
+        return StringUtils.removeStart(sb.toString(),"0");
     }
 
     public static String toShowString(byte[] bytes){
@@ -89,5 +116,9 @@ public class BytesUtil {
         byte[] result = imei2Bytes(imei);
         System.out.println(toShowString(result));
         System.out.println(bytes2Hex(result));
+
+        String testImei = "00813463346541368";
+        testImei = StringUtils.removeStart(testImei,"0");
+        System.out.println(testImei);
     }
 }

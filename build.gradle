@@ -44,11 +44,6 @@ allprojects {
 
 
     dependencies {
-        compile("org.springframework.boot:spring-boot-starter-web:${springbootVersion}") {
-            exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
-        }
-        compile group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2', version: "${springbootVersion}"
-
         // lombok
         compile group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
         annotationProcessor "org.projectlombok:lombok:${lombokVersion}"

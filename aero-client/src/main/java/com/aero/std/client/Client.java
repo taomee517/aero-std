@@ -1,6 +1,7 @@
 package com.aero.std.client;
 
 import com.aero.std.handler.AeroDevice;
+import com.aero.std.handler.EscapeHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -48,6 +49,7 @@ public class Client implements InitializingBean, DisposableBean {
 //                        pipeline.addLast("split", new FrameSplitHandler());
 //                        pipeline.addLast("validator", new Validator());
 //                        pipeline.addLast("head", new HeaderParseHandler());
+//                        pipeline.addLast("escape", new EscapeHandler());
                         pipeline.addLast("idle", new IdleStateHandler(10000,0,0, TimeUnit.MILLISECONDS));
                         pipeline.addLast("device", ch.attr(AeroDevice.DEVICE).get());
                     }

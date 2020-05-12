@@ -1,6 +1,7 @@
 package com.aero.std.common.sdk;
 
-import com.aero.std.common.constants.*;
+import com.aero.beans.constants.*;
+import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.utils.BytesUtil;
 import com.aero.std.common.utils.ValidateUtil;
 import com.aero.std.common.utils.VersionUtil;

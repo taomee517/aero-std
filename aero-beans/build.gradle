@@ -1,0 +1,4 @@
+dependencies {
+    // netty-all
+    compile group: 'io.netty', name: 'netty-all', version: "${nettyVersion}"
+}

@@ -2,9 +2,10 @@ package com.aero.std.handler;
 
 import com.aero.std.common.sdk.AeroParser;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.MessageToByteEncoder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -16,20 +17,21 @@ import org.springframework.stereotype.Component;
 @Component
 @ChannelHandler.Sharable
 @Slf4j
-public class UnescapeHandler extends ChannelInboundHandlerAdapter {
+public class EscapeHandler extends MessageToByteEncoder {
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf buf = ((ByteBuf) msg);
-        showHexMsg(buf,true);
-        AeroParser.unescape(buf);
-        showHexMsg(buf,false);
-        ctx.fireChannelRead(buf);
+    protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
+        byte[] bytes = ((byte[]) msg);
+        ByteBuf buffer = Unpooled.wrappedBuffer(bytes);
+        showHexMsg(buffer,true);
+        ByteBuf escapeBuffer = AeroParser.escape(buffer);
+        showHexMsg(escapeBuffer,false);
+        out.writeBytes(escapeBuffer);
     }
 
     private void showHexMsg(ByteBuf buf, boolean before){
         String escapeMsg = AeroParser.buffer2Hex(buf);
         String beforeChar = before?"前":"后";
-        log.info("反转义{}的消息为：{}", beforeChar, escapeMsg);
+        log.info("转义{}的消息为：{}", beforeChar, escapeMsg);
     }
 }

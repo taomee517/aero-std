@@ -1,6 +1,9 @@
-package com.aero.std.common.constants;
+package com.aero.beans.constants;
 
 import lombok.Getter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author 罗涛
@@ -29,5 +32,19 @@ public enum RequestType {
     RequestType(int code,String desc){
         this.code = code;
         this.desc = desc;
+    }
+
+
+    private static Map<Integer,RequestType> CODE_MAP = new HashMap<>();
+
+    static {
+        RequestType[] types = values();
+        for(RequestType type: types){
+            CODE_MAP.put(type.getCode(),type);
+        }
+    }
+
+    public static RequestType getRequestType(int code){
+        return CODE_MAP.get(code);
     }
 }

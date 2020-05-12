@@ -52,8 +52,10 @@ public class NettyServer implements SmartLifecycle {
                             ChannelPipeline pipeline = nioSocketChannel.pipeline();
                             pipeline.addLast("tcp-dispatch", handlers.tcpDispatchHandler);
                             pipeline.addLast("encoder", handlers.frameEncoder);
+                            //效果FrameSplitHandler类似，但传给后续handler的内容去掉了首尾
 //                            pipeline.addLast("decoder", new DelimiterBasedFrameDecoder(AeroConst.MAX_LENGTH, Unpooled.buffer(1).writeByte(AeroConst.SIGN_CODE)));
                             pipeline.addLast("split", new FrameSplitHandler());
+                            pipeline.addLast("unescape", handlers.unescapeHandler);
                             pipeline.addLast("validator", handlers.contentValidateHandler);
                             pipeline.addLast("head", handlers.headerParseHandler);
                             pipeline.addLast("core", handlers.coreParseHandler);

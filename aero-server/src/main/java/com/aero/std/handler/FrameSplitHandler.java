@@ -1,6 +1,7 @@
 package com.aero.std.handler;
 
 import com.aero.std.common.sdk.AeroParser;
+import com.aero.std.common.utils.BytesUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -21,7 +22,7 @@ public class FrameSplitHandler extends ByteToMessageDecoder {
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         try {
             ByteBuf frame = AeroParser.split(in);
-            log.info("收到设备消息：{}",frame.toString());
+            showHexData(frame);
             out.add(frame);
         } finally {
             resetBuffer(in);
@@ -40,5 +41,11 @@ public class FrameSplitHandler extends ByteToMessageDecoder {
                 buffer.setByte(index, buffer.getByte(index + start));
         }
         buffer.setIndex(0, left);
+    }
+
+
+    private void showHexData(ByteBuf frame){
+        String hexMsg = AeroParser.buffer2Hex(frame);
+        log.info("收到设备消息：{}", hexMsg);
     }
 }
