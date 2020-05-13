@@ -19,7 +19,19 @@ import java.util.Objects;
  */
 public class AeroMsgBuilder {
 
-    public static ByteBuf buildMessage(String imei, int serial, int funId, byte[] attr, ByteBuf content){
+    public static ByteBuf buildMessage(String imei, FunctionType functionType, byte[] attr, ByteBuf content){
+        int serial = SnUtil.getSn(imei);
+        int funId = functionType.getCode();
+        return buildMessage(imei,serial,0, funId,attr,content);
+    }
+
+    public static ByteBuf buildMessage(String imei, FunctionType functionType, int remoteSerial, byte[] attr, ByteBuf content){
+        int serial = SnUtil.getSn(imei);
+        int funId = functionType.getCode();
+        return buildMessage(imei,serial,remoteSerial, funId,attr,content);
+    }
+
+    public static ByteBuf buildMessage(String imei, int localSerial, int remoteSerial, int funId, byte[] attr, ByteBuf content){
 
         ByteBuf buffer = Unpooled.buffer();
         //帧头
@@ -30,8 +42,10 @@ public class AeroMsgBuilder {
         buffer.writeBytes(attr);
         //功能号
         buffer.writeBytes(BytesUtil.int2TwoBytes(funId));
-        //流水号
-        buffer.writeBytes(BytesUtil.int2TwoBytes(serial));
+        //流水号-本端
+        buffer.writeBytes(BytesUtil.int2TwoBytes(localSerial));
+        //流水号-对端
+        buffer.writeBytes(BytesUtil.int2TwoBytes(remoteSerial));
         //长度
         int length = Objects.nonNull(content)?content.readableBytes():0;
         buffer.writeBytes(BytesUtil.int2TwoBytes(length));
@@ -49,7 +63,7 @@ public class AeroMsgBuilder {
         return buffer;
     }
 
-    public static byte[] buildAttribute(String version,int requestCode,int dataTypeCode, int envCode,
+    public static byte[] buildAttribute(String version, int statusCode,int requestCode,int dataTypeCode, int envCode,
                                         boolean splitPack,int encryptCode, int validateTypeCode,int total, int current){
         byte[] bytes = new byte[4];
         if(splitPack){
@@ -63,6 +77,7 @@ public class AeroMsgBuilder {
             return null;
         }
         long attr = (versionCode & 0xff) << 24;
+        attr |= (statusCode & 0xff) << 16;
         attr |= (requestCode & 0xf) << 12;
         attr |= (dataTypeCode & 0xf) << 8;
         attr |= (envCode & 1) << 7;
@@ -83,41 +98,54 @@ public class AeroMsgBuilder {
 
     }
 
-    public static byte[] buildAttribute(String version, RequestType requestType, DataType dataType,
+    public static byte[] buildAttribute(String version, StatusCode status, RequestType requestType, DataType dataType,
                                         EnvType envType, boolean splitPack,EncryptType encryptType,
                                         ValidateType validateType,int total, int current) {
-        return buildAttribute(version,requestType.getCode(),dataType.getCode(),envType.getCode(),
+        return buildAttribute(version,status.getCode(),requestType.getCode(),dataType.getCode(),envType.getCode(),
                 splitPack,encryptType.getCode(),validateType.getCode(),total,current);
     }
 
-    public static byte[] buildAttribute(String version, RequestType requestType, DataType dataType,
+    public static byte[] buildAttribute(String version, StatusCode status, RequestType requestType, DataType dataType,
                                         EnvType envType, boolean splitPack,EncryptType encryptType,
                                         ValidateType validateType) {
-        return buildAttribute(version,requestType.getCode(),dataType.getCode(),envType.getCode(),
+        return buildAttribute(version,status.getCode(), requestType.getCode(),dataType.getCode(),envType.getCode(),
                 splitPack,encryptType.getCode(),validateType.getCode(),0,0);
     }
 
-    public static ByteBuf buildResponse(Header header){
+    /**
+     * 创建回复内容
+     * @param header
+     * @return
+     */
+    public static ByteBuf buildResponse(Header header, StatusCode status){
         String imei = header.getImei();
-        int srcSerial = header.getSerial();
+        int remoteSerial = header.getSerial();
+        FunctionType functionType = header.getFun();
         RequestType requestType = header.getRequest();
         int ackCode = requestType.getAckCode();
         if(ackCode==-1){
             return null;
         }
-        byte[] attr = buildAttribute(header.getVersion(),RequestType.getRequestType(ackCode), DataType.TLV,EnvType.DEBUG,false, header.getEncrypt(),
+        byte[] attr = buildAttribute(header.getVersion(),status,RequestType.getRequestType(ackCode), DataType.TLV,EnvType.DEBUG,false, header.getEncrypt(),
                 header.getValidateType());
-        ByteBuf content = Unpooled.buffer();
-        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.REQ_SN.getCode()));
-        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.REQ_SN.getLength()));
-        content.writeBytes(BytesUtil.int2TwoBytes(srcSerial));
-        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.STATUS_CODE.getCode()));
-        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.STATUS_CODE.getLength()));
-        content.writeByte(StatusCode.ACCEPT.getCode());
-        content.capacity(content.readableBytes());
-        ByteBuf buf = buildMessage(header.getImei(), SnUtil.getSn(imei),header.getFun().getCode(),attr,content);
+        ByteBuf content = null;
+//        ByteBuf content = Unpooled.buffer();
+//        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.REQ_SN.getCode()));
+//        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.REQ_SN.getLength()));
+//        content.writeBytes(BytesUtil.int2TwoBytes(srcSerial));
+//        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.STATUS_CODE.getCode()));
+//        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.STATUS_CODE.getLength()));
+//        content.writeByte(StatusCode.ACCEPT.getCode());
+//        content.capacity(content.readableBytes());
+        ByteBuf buf = buildMessage(imei,functionType,remoteSerial,attr,content);
         return buf;
     }
+
+
+
+
+
+
 
 
 }

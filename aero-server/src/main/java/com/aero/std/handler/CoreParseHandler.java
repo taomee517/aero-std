@@ -4,7 +4,6 @@ import com.aero.beans.base.Body;
 import com.aero.beans.base.Header;
 import com.aero.beans.base.Message;
 import com.aero.std.common.sdk.AeroParser;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
@@ -24,8 +23,8 @@ public class CoreParseHandler extends MessageToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, Object msg, List out) throws Exception {
         Header header = ((Header) msg);
-        ByteBuf content = header.getContent();
-        List<Body> bodies = AeroParser.parseBody(content);
+//        ByteBuf content = header.getContent();
+        List<Body> bodies = AeroParser.parseBody(header);
         Message message = new Message();
         message.setHeader(header);
         message.setBodies(bodies);

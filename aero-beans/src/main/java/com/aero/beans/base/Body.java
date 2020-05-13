@@ -9,4 +9,6 @@ import lombok.Data;
  */
 @Data
 public class Body {
+    private long utc;
+    private Object coreData;
 }

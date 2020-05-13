@@ -28,6 +28,24 @@ public class BytesUtil {
         return (bytes[0] & 0xFF) << 24 | (bytes[1] & 0xFF) << 16 | (bytes[2] & 0xFF) << 8 | (bytes[3] & 0xFF);
     }
 
+    public static long bytes2Long(byte[] bytes){
+        long value = 0L;
+//        int len = bytes.length;
+//        for (int i = 0; i < len; i++) {
+//            int b = bytes[i] & 0xff;
+//            int offset = 8*(len-i-1);
+//            value |= (b << offset);
+//        }
+        String hex = bytes2Hex(bytes);
+        value = Long.parseLong(hex,16);
+        return value;
+    }
+
+    public static byte[] utc2Bytes(long utc){
+        byte[] bytes = new byte[]{(byte) (utc >> 40),(byte) (utc >> 32),(byte) (utc >> 24),(byte) (utc >> 16),(byte) (utc >> 8), (byte) utc};
+        return bytes;
+    }
+
     public static String bytes2HexWithBlank(byte[] bytes, boolean withBlank){
 
         StringBuilder sb = new StringBuilder();

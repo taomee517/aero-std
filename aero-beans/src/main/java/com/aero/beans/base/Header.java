@@ -12,17 +12,19 @@ import lombok.Data;
 @Data
 public class Header {
     private String imei;
-    private int serial;
-    private FunctionType fun;
+    private String version;
+    private RequestType request;
+    private StatusCode statusCode;
     private DataType dataType;
     private EnvType env;
+    private boolean isSplitPack;
     private EncryptType encrypt;
     private ValidateType validateType;
-    private RequestType request;
-    private boolean isSplitPack;
     private int total;
     private int currIndex;
-    private String version;
+    private FunctionType fun;
+    private int serial;
+    private int remoteSerial;
     private int length;
     private byte[] crc;
     private ByteBuf content;

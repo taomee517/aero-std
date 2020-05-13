@@ -11,6 +11,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.ByteProcessor;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.aero.std.common.constants.AeroConst.*;
@@ -164,6 +165,8 @@ public class AeroParser {
         int bigVer = srcVer >> 4 & 0xf;
         int smallVer = srcVer & 0xf;
         String version = StringUtils.join(bigVer, ".", smallVer);
+        int srcStatusCode = attr >> 16 & 0xff;
+        StatusCode statusCode = StatusCode.getStatusCode(srcStatusCode);
         //请求方式
         int requestCode = attr >> 12 & 0xf;
         RequestType requestType = RequestType.getRequestType(requestCode);
@@ -192,8 +195,10 @@ public class AeroParser {
         //功能号
         int funId = in.readShort();
         FunctionType func = FunctionType.getFunctionType(funId);
-        //流水号
+        //流水号-设备端
         int serial = in.readShort();
+        //流水号-原请求端
+        int requestSerial = in.readShort();
         //消息长度
         int length = in.readShort();
         //消息内容
@@ -206,7 +211,9 @@ public class AeroParser {
         in.resetReaderIndex();
 
         header.setImei(imei);
+        header.setStatusCode(statusCode);
         header.setSerial(serial);
+        header.setRemoteSerial(requestSerial);
         header.setFun(func);
         header.setDataType(dataType);
         header.setEnv(env);
@@ -221,10 +228,26 @@ public class AeroParser {
         return header;
     }
 
-    public static List<Body> parseBody(ByteBuf content){
+    public static List<Body> parseBody(Header header){
+        ByteBuf content = header.getContent();
+        FunctionType functionType = header.getFun();
         int length = content.readableBytes();
         if(length>0){
-
+            switch (functionType){
+                case TIME:
+                    int typeCode = content.readShort();
+                    int len = content.readShort();
+                    byte[] value = new byte[len];
+                    content.readBytes(value);
+                    long utc = BytesUtil.bytes2Long(value);
+                    Body body = new Body();
+                    body.setUtc(utc);
+                    return Collections.singletonList(body);
+                case LOGIN:
+                case HEART_BEAT:
+                default:
+                    break;
+            }
         }
         return null;
     }

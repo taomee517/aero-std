@@ -1,9 +1,14 @@
 package com.aero.std.handler;
 
+import com.aero.beans.base.Header;
 import com.aero.beans.base.Message;
+import com.aero.beans.constants.*;
+import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.sdk.AeroMsgBuilder;
 import com.aero.std.common.sdk.AeroParser;
+import com.aero.std.common.utils.BytesUtil;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -33,10 +38,46 @@ public class DataActionHandler extends ChannelDuplexHandler {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         Message data = ((Message) msg);
-        ByteBuf resp = AeroMsgBuilder.buildResponse(data.getHeader());
-        String hexResp = AeroParser.buffer2Hex(resp);
-        log.info("响应设备：{}", hexResp);
-        ctx.writeAndFlush(resp);
+//        RequestType req = data.getHeader().getRequest();
+        Header header = data.getHeader();
+        String imei = header.getImei();
+        ByteBuf resp = null;
+        FunctionType func = data.getHeader().getFun();
+        log.info("收到设备消息，消息类型：{}", func.getDesc());
+        switch (func){
+            case HEART_BEAT:
+                resp = AeroMsgBuilder.buildResponse(header, StatusCode.ACCEPT);
+                break;
+            case LOGIN:
+                resp = AeroMsgBuilder.buildResponse(header, StatusCode.SUCCESS);
+                break;
+            case TIME:
+                resp = AeroMsgBuilder.buildResponse(header, StatusCode.ACCEPT);
+                long dutc = data.getBodies().get(0).getUtc();
+                long utc = System.currentTimeMillis();
+                long offset = utc - dutc;
+                log.info("时间差：{}", offset);
+                if(offset > 10000){
+                    log.warn("设备与平台的时间差较大，下发时间校正指令！");
+                    byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.REFUSE, RequestType.SETTING, DataType.TLV, EnvType.DEBUG,false,EncryptType.CRC,ValidateType.CRC);
+                    ByteBuf content = Unpooled.buffer();
+                    byte[] utcBytes = BytesUtil.utc2Bytes(System.currentTimeMillis());
+                    content.writeBytes(BytesUtil.int2TwoBytes(2));
+                    content.writeBytes(BytesUtil.int2TwoBytes(utcBytes.length));
+                    content.writeBytes(utcBytes);
+                    content.capacity(content.readableBytes());
+                    ByteBuf timeAdjustCmd = AeroMsgBuilder.buildMessage(imei,FunctionType.TIME,attr, content);
+                    ctx.writeAndFlush(timeAdjustCmd);
+                }
+                break;
+            default:
+                break;
+        }
+        if (resp!=null) {
+            String hexResp = AeroParser.buffer2Hex(resp);
+            log.info("响应设备：{}", hexResp);
+            ctx.writeAndFlush(resp);
+        }
     }
 
     @Override

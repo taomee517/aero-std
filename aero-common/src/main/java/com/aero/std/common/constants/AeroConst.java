@@ -24,4 +24,6 @@ public class AeroConst {
     /**转义后的7E*/
     public static final byte[] ESCAPE_7E = {0x7d,0x01};
 
+    public static final String PROTOCOL_VERSION = "1.0";
+
 }
