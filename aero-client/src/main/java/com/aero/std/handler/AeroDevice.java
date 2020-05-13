@@ -1,5 +1,6 @@
 package com.aero.std.handler;
 
+import com.aero.beans.constants.*;
 import com.aero.std.common.constants.*;
 import com.aero.std.common.sdk.AeroMsgBuilder;
 import com.aero.std.common.sdk.AeroParser;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2020/5/11 18:26
  */
 @Slf4j
+@ChannelHandler.Sharable
 public class AeroDevice extends ChannelDuplexHandler {
     public static InetSocketAddress remoteAddr;
     public static NioEventLoopGroup workers;
@@ -86,7 +88,9 @@ public class AeroDevice extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        log.info("设备{}收到服务器消息：{}", this.imei, msg.toString());
+        ByteBuf buf = ((ByteBuf) msg);
+        String hexBuf = AeroParser.buffer2Hex(buf);
+        log.info("设备{}收到服务器消息：{}", this.imei, hexBuf);
     }
 
     @Override
@@ -106,7 +110,8 @@ public class AeroDevice extends ChannelDuplexHandler {
     }
 
     private void sendHeartbeat(ChannelHandlerContext ctx){
-        byte[] attr = AeroMsgBuilder.buildAttribute(DataType.TCP, EnvType.DEBUG, EncryptType.CRC, ValidateType.CRC, RequestType.PUBLISH,false,"1.0",0,0);
+        String protocolVersion = "1.0";
+        byte[] attr = AeroMsgBuilder.buildAttribute(protocolVersion, RequestType.PUBLISH,DataType.TLV, EnvType.DEBUG, false, EncryptType.CRC, ValidateType.CRC);
 //        int serial = SnUtil.getSn();
         int serial = 0x7d;
         ByteBuf msg = AeroMsgBuilder.buildMessage(imei,serial, 0, attr,null);

@@ -22,6 +22,7 @@ public class Header {
     private boolean isSplitPack;
     private int total;
     private int currIndex;
+    private String version;
     private int length;
     private byte[] crc;
     private ByteBuf content;

@@ -31,4 +31,7 @@ public class HandlerCenter {
 
     @Autowired
     public FrameEncoder frameEncoder;
+
+    @Autowired
+    public DataActionHandler dataActionHandler;
 }

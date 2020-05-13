@@ -25,5 +25,6 @@ public class HeaderParseHandler extends MessageToMessageDecoder {
         ByteBuf buf = ((ByteBuf) msg);
         Header header = AeroParser.parseHeader(buf);
         log.info("解析出消息头：{}",header);
+        out.add(header);
     }
 }

@@ -1,5 +1,6 @@
 package com.aero.std.common.sdk;
 
+import com.aero.beans.base.Body;
 import com.aero.beans.base.Header;
 import com.aero.beans.constants.*;
 import com.aero.std.common.constants.AeroConst;
@@ -9,6 +10,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ByteProcessor;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
 
 import static com.aero.std.common.constants.AeroConst.*;
 
@@ -135,11 +138,10 @@ public class AeroParser {
         }
         //排除首，尾和校验码部分
         byte[] validatingContent = new byte[length-4];
-        in.readerIndex(1);
-        in.readBytes(validatingContent);
+        in.getBytes(1,validatingContent);
 
         byte[] srcCrc = new byte[2];
-        in.readBytes(srcCrc);
+        in.getBytes(length-3,srcCrc);
 
         byte[] calCrc = ValidateUtil.calCrc(validatingContent);
         return BytesUtil.arrayEqual(srcCrc,calCrc);
@@ -147,57 +149,61 @@ public class AeroParser {
 
     public static Header parseHeader(ByteBuf in){
         Header header = new Header();
+        header.setRaw(in);
         //帧头
         byte start = in.readByte();
         //imei
         byte[] srcImei = new byte[8];
         in.readBytes(srcImei);
         String imei = BytesUtil.bytes2Imei(srcImei);
-        //流水号
-        int serial = in.readShort();
-        //功能号
-        int funId = in.readShort();
-        FunctionType func = FunctionType.getFunctionType(funId);
-        //属性
+
+        /**属性-start*/
         int attr = in.readInt();
-        //传输类型
-        int dataTypeCode = attr >> 30 & 3;
-        DataType dataType = DataType.getDataType(dataTypeCode);
-        //环境
-        int envCode = attr >> 22 & 3;
-        EnvType env = EnvType.getEnvType(envCode);
-        //加密方式
-        int encrypCode = attr >> 19 & 7;
-        EncryptType encryptType = EncryptType.getDataType(encrypCode);
-        //校验方式
-        int validateTypeCode = attr >> 16 & 7;
-        ValidateType validateType = ValidateType.getValidateType(validateTypeCode);
-        //请求方式
-        int requestCode = attr >> 12 & 0xf;
-        RequestType requestType = RequestType.getRequestType(requestCode);
-        //是否分包
-        boolean isSplitPack = (attr >> 11 & 1) == 1;
-        if(isSplitPack){
-            int splitPackInfo = in.readInt();
-            int total = splitPackInfo & 0xff;
-            int currIndex = splitPackInfo >> 16 & 0xff;
-            header.setTotal(total);
-            header.setCurrIndex(currIndex);
-        }
         //协议版本
-        int srcVer = attr & 7;
+        int srcVer = attr >> 24 & 0xff;
         int bigVer = srcVer >> 4 & 0xf;
         int smallVer = srcVer & 0xf;
         String version = StringUtils.join(bigVer, ".", smallVer);
+        //请求方式
+        int requestCode = attr >> 12 & 0xf;
+        RequestType requestType = RequestType.getRequestType(requestCode);
+        //数据类型
+        int dataTypeCode = attr >> 8 & 0xf;
+        DataType dataType = DataType.getDataType(dataTypeCode);
+        //环境
+        int envCode = attr >> 7 & 3;
+        EnvType env = EnvType.getEnvType(envCode);
+        //是否分包
+        boolean isSplitPack = (attr >> 6 & 1) == 1;
+        if(isSplitPack){
+            int total = in.readByte();
+            int currIndex = in.readByte();
+            header.setTotal(total);
+            header.setCurrIndex(currIndex);
+        }
+        //加密方式
+        int encrypCode = attr >> 2 & 3;
+        EncryptType encryptType = EncryptType.getDataType(encrypCode);
+        //校验方式
+        int validateTypeCode = attr & 3;
+        ValidateType validateType = ValidateType.getValidateType(validateTypeCode);
+        /**属性-end*/
+
+        //功能号
+        int funId = in.readShort();
+        FunctionType func = FunctionType.getFunctionType(funId);
+        //流水号
+        int serial = in.readShort();
         //消息长度
         int length = in.readShort();
         //消息内容
-        ByteBuf content = in.readRetainedSlice(length);
+        ByteBuf content = in.retainedSlice(in.readerIndex(),length);
         //校验
         byte[] crc = new byte[2];
         in.readBytes(crc);
         //帧尾
         byte end = in.readByte();
+        in.resetReaderIndex();
 
         header.setImei(imei);
         header.setSerial(serial);
@@ -208,9 +214,19 @@ public class AeroParser {
         header.setValidateType(validateType);
         header.setRequest(requestType);
         header.setSplitPack(isSplitPack);
+        header.setVersion(version);
         header.setLength(length);
         header.setContent(content);
+        header.setCrc(crc);
         return header;
+    }
+
+    public static List<Body> parseBody(ByteBuf content){
+        int length = content.readableBytes();
+        if(length>0){
+
+        }
+        return null;
     }
 
 

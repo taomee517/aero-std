@@ -12,8 +12,9 @@ import java.util.Map;
  */
 @Getter
 public enum  DataType {
-    TCP(0, "TCP"),
-    UDP(1, "UDP"),
+    TLV(0, "TLV"),
+    JSON(1, "JSON"),
+    TEXT(2, "TEXT")
     ;
 
     private int code;

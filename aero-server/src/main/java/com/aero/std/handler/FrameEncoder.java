@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class FrameEncoder extends MessageToByteEncoder {
     @Override
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
-
+        ByteBuf data = ((ByteBuf) msg);
+        out.writeBytes(data);
     }
 }

@@ -1,5 +1,6 @@
 package com.aero.std.handler;
 
+import com.aero.beans.constants.EnvType;
 import com.aero.std.common.sdk.AeroParser;
 import com.aero.std.common.utils.BytesUtil;
 import io.netty.buffer.ByteBuf;
@@ -21,12 +22,24 @@ public class ContentValidateHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf buf = ((ByteBuf) msg);
-        if(AeroParser.validate(buf)){
+        if(EnvType.DEBUG.equals(getEnvType(buf))){
+            log.error("开发环境，无须校验");
+            ctx.fireChannelRead(buf);
+        }else if(AeroParser.validate(buf)){
             log.error("消息校验通过");
-            ctx.fireChannelRead(ctx);
+            ctx.fireChannelRead(buf);
         }else {
             String hexMsg = AeroParser.buffer2Hex(buf);
             log.error("消息校验失败：{}", hexMsg);
         }
+    }
+
+    private EnvType getEnvType(ByteBuf buf){
+        byte[] srcAttr = new byte[4];
+        buf.getBytes(9,srcAttr);
+        int attr = BytesUtil.bytes2Int(srcAttr);
+        int envCode = attr >> 7 & 1;
+        EnvType envType = EnvType.getEnvType(envCode);
+        return envType;
     }
 }

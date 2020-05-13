@@ -56,9 +56,11 @@ public class NettyServer implements SmartLifecycle {
 //                            pipeline.addLast("decoder", new DelimiterBasedFrameDecoder(AeroConst.MAX_LENGTH, Unpooled.buffer(1).writeByte(AeroConst.SIGN_CODE)));
                             pipeline.addLast("split", new FrameSplitHandler());
                             pipeline.addLast("unescape", handlers.unescapeHandler);
+                            pipeline.addLast("escape", handlers.escapeHandler);
                             pipeline.addLast("validator", handlers.contentValidateHandler);
                             pipeline.addLast("head", handlers.headerParseHandler);
                             pipeline.addLast("core", handlers.coreParseHandler);
+                            pipeline.addLast("action", handlers.dataActionHandler);
 //                            pipeline.addLast("idle", new IdleStateHandler(0,30,0, TimeUnit.SECONDS));
 //                            pipeline.addLast("heart-beat", handlers.getHeartBeatHandler());
                         }
