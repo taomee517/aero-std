@@ -12,24 +12,39 @@ import java.util.Map;
  */
 @Getter
 public enum FunctionType {
-    HEART_BEAT(0, "心跳"),
-    LOGIN(1, "登录"),
-    TIME(2, "时间"),
-    BATTERY(3, "电量"),
-    DEVICE_INFO(4, "设备信息"),
-    SERVER_URL(5, "上线地址"),
-    INTERVAL(6, "频率"),
-    CORE_DATA(7, "核心数据"),
-    THRESHOLD(8, "阈值"),
-    ALARM(9, "告警"),
-    UPGRADE(10, "升级"),
-    UPGRADE_SHARD(11, "升级分片"),
-    UPGRADE_CRC(11, "升级分片校验"),
-    UPGRADE_RESULT(11, "升级结果"),
-    REBOOT(11, "重启"),
-    DEBUG(11, "调试"),
-    ERROR(11, "异常"),
-    MULTI_SUBSCRIBE(11, "批量订阅"),
+    //交互类
+    REGISTER(0x0000, "注册"),
+    LOGIN(0x0001, "登录"),
+    LOGOUT(0x0002, "登出"),
+    HEART_BEAT(0x0100, "心跳"),
+
+    //基础参数类
+    TIME(0x1000, "时间校正"),
+    DEVICE_INFO(0x1001, "设备信息"),
+    BATTERY(0x1002, "电量"),
+    SERVER_URL(0x1003, "上线地址"),
+    INTERVAL(0x1004, "频率"),
+
+    //核心数据类（传感器-采集）
+    CORE_DATA(0x2000, "核心数据"),
+
+    //参数管理类
+    LOWER_THRESHOLD(0x3000, "下限阈值"),
+    UPPER_THRESHOLD(0x3001, "上限阈值"),
+    ALARM(0x3FFF, "告警"),
+
+    //远程升级
+    UPGRADE(0xFF00, "升级"),
+    UPGRADE_SHARD(0xFF01, "升级分片"),
+    UPGRADE_CRC(0xFF02, "升级分片校验"),
+    UPGRADE_RESULT(0xFF03, "升级结果"),
+
+    //设备远程运维
+    REBOOT(0xFFF0, "重启"),
+    DEBUG(0xFFFE, "调试"),
+    ERROR(0xFFFF, "异常"),
+
+    MULTI_SUBSCRIBE(0xA000, "批量订阅"),
     ;
 
     private int code;

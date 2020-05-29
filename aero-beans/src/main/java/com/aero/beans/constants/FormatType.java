@@ -11,7 +11,7 @@ import java.util.Map;
  * @date 2020/5/11 17:02
  */
 @Getter
-public enum  DataType {
+public enum FormatType {
     TLV(0, "TLV"),
     JSON(1, "JSON"),
     TEXT(2, "TEXT")
@@ -20,21 +20,21 @@ public enum  DataType {
     private int code;
     private String desc;
 
-    DataType(int code,String desc){
+    FormatType(int code, String desc){
         this.code = code;
         this.desc = desc;
     }
 
-    private static Map<Integer,DataType> CODE_MAP = new HashMap<>();
+    private static Map<Integer, FormatType> CODE_MAP = new HashMap<>();
 
     static {
-        DataType[] types = values();
-        for(DataType type: types){
+        FormatType[] types = values();
+        for(FormatType type: types){
             CODE_MAP.put(type.getCode(),type);
         }
     }
 
-    public static DataType getDataType(int code){
+    public static FormatType getDataType(int code){
         return CODE_MAP.get(code);
     }
 }

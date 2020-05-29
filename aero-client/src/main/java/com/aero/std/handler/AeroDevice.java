@@ -36,10 +36,13 @@ public class AeroDevice extends ChannelDuplexHandler {
     private int retry = 0;
     private String imei;
 
+    private EnvType envType;
+
 
     public static final AttributeKey<ChannelHandler> DEVICE = AttributeKey.valueOf("DEVICE");
-    public AeroDevice(String imei){
+    public AeroDevice(String imei, EnvType envType){
         this.imei = imei;
+        this.envType = envType;
         workers.schedule(connect, 0, TimeUnit.SECONDS);
     }
 
@@ -75,12 +78,12 @@ public class AeroDevice extends ChannelDuplexHandler {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         log.warn("设备{}与平台建立连接！", this.imei);
         //发送登录或状态消息
-        ByteBuf loginMsg = buildLogin(imei,EnvType.DEBUG);
+        ByteBuf loginMsg = buildLogin(imei,envType);
         String loginHex = AeroParser.buffer2Hex(loginMsg);
         log.info("登录消息, hex: {}", loginHex);
         ctx.writeAndFlush(loginMsg);
 
-        ByteBuf timeMsg = buildTimeReport(imei,EnvType.DEBUG);
+        ByteBuf timeMsg = buildTimeReport(imei,envType);
         String timeHex = AeroParser.buffer2Hex(timeMsg);
         log.info("时间消息, hex: {}", timeHex);
         ctx.writeAndFlush(timeMsg);
@@ -105,7 +108,7 @@ public class AeroDevice extends ChannelDuplexHandler {
     @Override
     public void flush(ChannelHandlerContext ctx) throws Exception {
         super.flush(ctx);
-        log.info("执行flush");
+//        log.info("执行flush");
     }
 
     @Override
@@ -125,7 +128,7 @@ public class AeroDevice extends ChannelDuplexHandler {
     }
 
     private void sendHeartbeat(ChannelHandlerContext ctx){
-        ByteBuf hb = buildHeartBeat(imei,EnvType.DEBUG);
+        ByteBuf hb = buildHeartBeat(imei,envType);
         String hexMsg = AeroParser.buffer2Hex(hb);
         log.info("发送心跳, hex: {}", hexMsg);
 
@@ -138,28 +141,27 @@ public class AeroDevice extends ChannelDuplexHandler {
     }
 
     private ByteBuf buildHeartBeat(String imei, EnvType env){
-        byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.REQUEST,RequestType.PUBLISH,DataType.TLV,
-                env, false, EncryptType.CRC, ValidateType.CRC);
-        ByteBuf msg = AeroMsgBuilder.buildMessage(imei,FunctionType.HEART_BEAT, attr,null);
+        byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.NONE,
+                env, FormatType.TLV,RequestType.PUBLISH);
+        ByteBuf msg = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.HEART_BEAT, attr,null);
         return msg;
     }
 
     private ByteBuf buildLogin(String imei, EnvType env){
-        byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.REQUEST,RequestType.PUBLISH,DataType.TLV,
-                env, false, EncryptType.CRC, ValidateType.CRC);
-        ByteBuf msg = AeroMsgBuilder.buildMessage(imei,FunctionType.LOGIN, attr,null);
+        byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.NONE,
+                env, FormatType.TLV,RequestType.PUBLISH);
+        ByteBuf msg = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.LOGIN, attr,null);
         return msg;
     }
 
     private ByteBuf buildTimeReport(String imei, EnvType env){
-        byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.REQUEST,RequestType.PUBLISH,DataType.TLV,
-                env, false, EncryptType.CRC, ValidateType.CRC);
+        byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.NONE,env, FormatType.TLV,RequestType.PUBLISH);
         ByteBuf content = Unpooled.buffer();
         byte[] utcBytes = BytesUtil.utc2Bytes(System.currentTimeMillis());
         content.writeBytes(BytesUtil.int2TwoBytes(2));
         content.writeBytes(BytesUtil.int2TwoBytes(utcBytes.length));
         content.writeBytes(utcBytes);
-        ByteBuf msg = AeroMsgBuilder.buildMessage(imei,FunctionType.TIME, attr,content);
+        ByteBuf msg = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.TIME, attr,content);
         return msg;
     }
 }

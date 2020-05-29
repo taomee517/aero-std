@@ -6,7 +6,6 @@ import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.utils.BytesUtil;
 import com.aero.std.common.utils.SnUtil;
 import com.aero.std.common.utils.ValidateUtil;
-import com.aero.std.common.utils.VersionUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -19,13 +18,21 @@ import java.util.Objects;
  */
 public class AeroMsgBuilder {
 
-    public static ByteBuf buildMessage(String imei, FunctionType functionType, byte[] attr, ByteBuf content){
+    /**
+     * 创建请求消息，远端流水号为0
+     * @param imei 设备号
+     * @param functionType  功能号
+     * @param attr 属性
+     * @param content 消息内容
+     * @return
+     */
+    public static ByteBuf buildRequestMessage(String imei, FunctionType functionType, byte[] attr, ByteBuf content){
         int serial = SnUtil.getSn(imei);
         int funId = functionType.getCode();
         return buildMessage(imei,serial,0, funId,attr,content);
     }
 
-    public static ByteBuf buildMessage(String imei, FunctionType functionType, int remoteSerial, byte[] attr, ByteBuf content){
+    public static ByteBuf buildAckMessage(String imei, FunctionType functionType, int remoteSerial, byte[] attr, ByteBuf content){
         int serial = SnUtil.getSn(imei);
         int funId = functionType.getCode();
         return buildMessage(imei,serial,remoteSerial, funId,attr,content);
@@ -49,7 +56,7 @@ public class AeroMsgBuilder {
         //长度
         int length = Objects.nonNull(content)?content.readableBytes():0;
         buffer.writeBytes(BytesUtil.int2TwoBytes(length));
-        //内容
+        //内容 => 还未作加密 TODO
         if (Objects.nonNull(content)) {
             buffer.writeBytes(content);
         }
@@ -63,53 +70,21 @@ public class AeroMsgBuilder {
         return buffer;
     }
 
-    public static byte[] buildAttribute(String version, int statusCode,int requestCode,int dataTypeCode, int envCode,
-                                        boolean splitPack,int encryptCode, int validateTypeCode,int total, int current){
-        byte[] bytes = new byte[4];
-        if(splitPack){
-            bytes = new byte[6];
-        }
-        int versionCode = 0;
-        try {
-            versionCode = VersionUtil.version2Byte(version);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-        long attr = (versionCode & 0xff) << 24;
-        attr |= (statusCode & 0xff) << 16;
-        attr |= (requestCode & 0xf) << 12;
-        attr |= (dataTypeCode & 0xf) << 8;
+    public static byte[] buildAttribute(String version, int statusCode, int envCode, int dataTypeCode, int requestCode){
+        byte[] attrBytes = new byte[3];
+        int versionCode = Integer.valueOf(version);
+        attrBytes[0] = ((byte) versionCode);
+        attrBytes[1] = ((byte) statusCode);
+        byte attr = 0;
         attr |= (envCode & 1) << 7;
-        int packCode = splitPack?1:0;
-        attr |= packCode << 6;
-        attr |= (encryptCode & 3) << 2;
-        attr |= (validateTypeCode & 3);
-        byte[] attrBytes = BytesUtil.int2Bytes(((int) attr));
-        if(!splitPack){
-            bytes = attrBytes;
-            return bytes;
-        }else {
-            System.arraycopy(attrBytes,0,bytes,0, 4);
-            bytes[4] = ((byte) total);
-            bytes[5] = ((byte) current);
-            return bytes;
-        }
-
+        attr |= (dataTypeCode & 0x7) << 4;
+        attr |= requestCode & 0xf;
+        attrBytes[2] = attr;
+        return attrBytes;
     }
 
-    public static byte[] buildAttribute(String version, StatusCode status, RequestType requestType, DataType dataType,
-                                        EnvType envType, boolean splitPack,EncryptType encryptType,
-                                        ValidateType validateType,int total, int current) {
-        return buildAttribute(version,status.getCode(),requestType.getCode(),dataType.getCode(),envType.getCode(),
-                splitPack,encryptType.getCode(),validateType.getCode(),total,current);
-    }
-
-    public static byte[] buildAttribute(String version, StatusCode status, RequestType requestType, DataType dataType,
-                                        EnvType envType, boolean splitPack,EncryptType encryptType,
-                                        ValidateType validateType) {
-        return buildAttribute(version,status.getCode(), requestType.getCode(),dataType.getCode(),envType.getCode(),
-                splitPack,encryptType.getCode(),validateType.getCode(),0,0);
+    public static byte[] buildAttribute(String version, StatusCode status, EnvType envType, FormatType formatType, RequestType requestType) {
+        return buildAttribute(version,status.getCode(),envType.getCode(), formatType.getCode(),requestType.getCode());
     }
 
     /**
@@ -122,22 +97,21 @@ public class AeroMsgBuilder {
         int remoteSerial = header.getSerial();
         FunctionType functionType = header.getFun();
         RequestType requestType = header.getRequest();
+        RequestType ackType = RequestType.getRequestType(requestType.getAckCode());
         int ackCode = requestType.getAckCode();
         if(ackCode==-1){
             return null;
         }
-        byte[] attr = buildAttribute(header.getVersion(),status,RequestType.getRequestType(ackCode), DataType.TLV,EnvType.DEBUG,false, header.getEncrypt(),
-                header.getValidateType());
+        byte[] attr = buildAttribute(header.getVersion(),status,header.getEnv(), FormatType.TLV,ackType);
         ByteBuf content = null;
-//        ByteBuf content = Unpooled.buffer();
-//        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.REQ_SN.getCode()));
-//        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.REQ_SN.getLength()));
-//        content.writeBytes(BytesUtil.int2TwoBytes(srcSerial));
-//        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.STATUS_CODE.getCode()));
-//        content.writeBytes(BytesUtil.int2TwoBytes(TlvType.STATUS_CODE.getLength()));
-//        content.writeByte(StatusCode.ACCEPT.getCode());
-//        content.capacity(content.readableBytes());
-        ByteBuf buf = buildMessage(imei,functionType,remoteSerial,attr,content);
+        if(FunctionType.TIME.equals(header.getFun())){
+            content = Unpooled.buffer(10);
+            content.writeShort(1);
+            content.writeShort(6);
+            byte[] timeBytes = BytesUtil.utc2Bytes(System.currentTimeMillis());
+            content.writeBytes(timeBytes);
+        }
+        ByteBuf buf = buildAckMessage(imei,functionType,remoteSerial,attr,content);
         return buf;
     }
 

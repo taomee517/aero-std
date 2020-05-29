@@ -2,6 +2,7 @@ package com.aero.std.client;
 
 import com.aero.std.handler.AeroDevice;
 import com.aero.std.handler.EscapeHandler;
+import com.aero.std.handler.FrameSplitHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -46,11 +47,11 @@ public class Client implements InitializingBean, DisposableBean {
                     protected void initChannel(NioSocketChannel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
 //                        pipeline.addLast("encoder", new Encoder());
-//                        pipeline.addLast("split", new FrameSplitHandler());
+                        pipeline.addLast("split", new FrameSplitHandler());
 //                        pipeline.addLast("validator", new Validator());
 //                        pipeline.addLast("head", new HeaderParseHandler());
 //                        pipeline.addLast("escape", new EscapeHandler());
-                        pipeline.addLast("idle", new IdleStateHandler(10000,0,0, TimeUnit.MILLISECONDS));
+                        pipeline.addLast("idle", new IdleStateHandler(20000,0,0, TimeUnit.MILLISECONDS));
                         pipeline.addLast("device", ch.attr(AeroDevice.DEVICE).get());
                     }
                 });

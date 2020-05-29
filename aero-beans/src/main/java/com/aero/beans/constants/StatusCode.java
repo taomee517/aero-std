@@ -12,7 +12,7 @@ import java.util.Map;
  */
 @Getter
 public enum StatusCode {
-    REQUEST(0x00, "无-请求用"),
+    NONE(0x00, "无-请求用"),
     ACCEPT(0x01, "已接受"),
     SUCCESS(0x02, "执行成功"),
     REFUSE(0x03, "拒绝写入"),

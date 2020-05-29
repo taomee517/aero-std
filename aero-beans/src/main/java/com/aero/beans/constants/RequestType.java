@@ -16,14 +16,14 @@ public enum RequestType {
     QUERY_ACK(1, "读响应",-1),
     SETTING(2, "写请求",3),
     SETTING_ACK(3, "写响应",-1),
-    SUBSCRIBE(4, "订阅请求",5),
-    SUBSCRIBE_ACK(5, "订阅响应",-1),
-    PUBLISH(6, "发布请求",7),
-    PUBLISH_ACK(7, "发布响应",-1),
-    UNSUBSCRIBE(8, "取消订阅请求",9),
-    UNSUBSCRIBE_ACK(9, "取消订阅响应",-1),
-    EXECUTE(10, "执行请求",11),
-    EXECUTE_ACK(11, "执行响应",-1),
+    PUBLISH(4, "发布请求",5),
+    PUBLISH_ACK(5, "发布响应",-1),
+    EXECUTE(6, "执行请求",7),
+    EXECUTE_ACK(7, "执行响应",-1),
+    SUBSCRIBE(8, "订阅请求",9),
+    SUBSCRIBE_ACK(9, "订阅响应",-1),
+    UNSUBSCRIBE(10, "取消订阅请求",11),
+    UNSUBSCRIBE_ACK(11, "取消订阅响应",-1),
     ;
 
     private int code;

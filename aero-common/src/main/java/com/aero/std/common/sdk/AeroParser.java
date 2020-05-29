@@ -9,7 +9,6 @@ import com.aero.std.common.utils.ValidateUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ByteProcessor;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -87,7 +86,7 @@ public class AeroParser {
                     skip = false;
                     continue;
                 }
-                if(BytesUtil.arrayEqual(temp,AeroConst.ESCAPE_7D)){
+                if(BytesUtil.arrayEqual(temp, AeroConst.ESCAPE_7D)){
                     in.writeByte(AeroConst.ESCAPE_SIGN);
                     skip = true;
                     continue;
@@ -159,37 +158,42 @@ public class AeroParser {
         String imei = BytesUtil.bytes2Imei(srcImei);
 
         /**属性-start*/
-        int attr = in.readInt();
+        byte[] attr = new byte[3];
+        in.readBytes(attr);
         //协议版本
-        int srcVer = attr >> 24 & 0xff;
-        int bigVer = srcVer >> 4 & 0xf;
-        int smallVer = srcVer & 0xf;
-        String version = StringUtils.join(bigVer, ".", smallVer);
-        int srcStatusCode = attr >> 16 & 0xff;
+//        int srcVer = attr >> 24 & 0xff;
+//        int bigVer = srcVer >> 4 & 0xf;
+//        int smallVer = srcVer & 0xf;
+//        String version = StringUtils.join(bigVer, ".", smallVer);
+        String version = String.valueOf(attr[0]);
+        //响应状态码
+        int srcStatusCode = attr[1];
         StatusCode statusCode = StatusCode.getStatusCode(srcStatusCode);
-        //请求方式
-        int requestCode = attr >> 12 & 0xf;
-        RequestType requestType = RequestType.getRequestType(requestCode);
-        //数据类型
-        int dataTypeCode = attr >> 8 & 0xf;
-        DataType dataType = DataType.getDataType(dataTypeCode);
+
+        int multiInfo = attr[2];
         //环境
-        int envCode = attr >> 7 & 3;
+        int envCode = multiInfo >> 0x7 & 1;
         EnvType env = EnvType.getEnvType(envCode);
+        //数据类型
+        int dataTypeCode = multiInfo >> 4 & 0x7;
+        FormatType formatType = FormatType.getDataType(dataTypeCode);
+        //请求方式
+        int requestCode = multiInfo & 0xf;
+        RequestType requestType = RequestType.getRequestType(requestCode);
         //是否分包
-        boolean isSplitPack = (attr >> 6 & 1) == 1;
-        if(isSplitPack){
-            int total = in.readByte();
-            int currIndex = in.readByte();
-            header.setTotal(total);
-            header.setCurrIndex(currIndex);
-        }
-        //加密方式
-        int encrypCode = attr >> 2 & 3;
-        EncryptType encryptType = EncryptType.getDataType(encrypCode);
-        //校验方式
-        int validateTypeCode = attr & 3;
-        ValidateType validateType = ValidateType.getValidateType(validateTypeCode);
+//        boolean isSplitPack = (attr >> 6 & 1) == 1;
+//        if(isSplitPack){
+//            int total = in.readByte();
+//            int currIndex = in.readByte();
+//            header.setTotal(total);
+//            header.setCurrIndex(currIndex);
+//        }
+//        //加密方式
+//        int encrypCode = attr >> 2 & 3;
+//        EncryptType encryptType = EncryptType.getDataType(encrypCode);
+//        //校验方式
+//        int validateTypeCode = attr & 3;
+//        ValidateType validateType = ValidateType.getValidateType(validateTypeCode);
         /**属性-end*/
 
         //功能号
@@ -212,15 +216,15 @@ public class AeroParser {
 
         header.setImei(imei);
         header.setStatusCode(statusCode);
+        header.setEnv(env);
+        header.setFormatType(formatType);
+        header.setRequest(requestType);
+        header.setFun(func);
         header.setSerial(serial);
         header.setRemoteSerial(requestSerial);
-        header.setFun(func);
-        header.setDataType(dataType);
-        header.setEnv(env);
-        header.setEncrypt(encryptType);
-        header.setValidateType(validateType);
-        header.setRequest(requestType);
-        header.setSplitPack(isSplitPack);
+//        header.setEncrypt(encryptType);
+//        header.setValidateType(validateType);
+//        header.setSplitPack(isSplitPack);
         header.setVersion(version);
         header.setLength(length);
         header.setContent(content);
@@ -264,18 +268,18 @@ public class AeroParser {
     }
 
 
-    public static void main(String[] args) {
-//        String src = "7e 08 13 46 33 46 54 13 68 00 7d 00 7d 01 00 03 00 10 00 00 09 42 7e";
-        String src = "7e 08 13 46 33 46 54 13 68 00 7d 7e 00 03 00 10 00 00 09 42 7e";
-        src = StringUtils.replace(src," ", "");
-        byte[] bytes = BytesUtil.hex2Bytes(src);
-        ByteBuf buffer = Unpooled.wrappedBuffer(bytes);
-//        unescape(buffer);
-//        String newHex = buffer2Hex(buffer);
-//        System.out.println("反转义后的结果：" + newHex);
-
-        ByteBuf out = escape(buffer);
-        String newHex = buffer2Hex(out);
-        System.out.println("转义后的结果：" + newHex);
-    }
+//    public static void main(String[] args) {
+////        String src = "7e 08 13 46 33 46 54 13 68 00 7d 00 7d 01 00 03 00 10 00 00 09 42 7e";
+//        String src = "7e 08 13 46 33 46 54 13 68 00 7d 7e 00 03 00 10 00 00 09 42 7e";
+//        src = StringUtils.replace(src," ", "");
+//        byte[] bytes = BytesUtil.hex2Bytes(src);
+//        ByteBuf buffer = Unpooled.wrappedBuffer(bytes);
+////        unescape(buffer);
+////        String newHex = buffer2Hex(buffer);
+////        System.out.println("反转义后的结果：" + newHex);
+//
+//        ByteBuf out = escape(buffer);
+//        String newHex = buffer2Hex(out);
+//        System.out.println("转义后的结果：" + newHex);
+//    }
 }

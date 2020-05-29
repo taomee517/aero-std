@@ -16,6 +16,8 @@ import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
+
 /**
  * @author 罗涛
  * @title DataActionHandler
@@ -56,19 +58,19 @@ public class DataActionHandler extends ChannelDuplexHandler {
                 long dutc = data.getBodies().get(0).getUtc();
                 long utc = System.currentTimeMillis();
                 long offset = utc - dutc;
-                log.info("时间差：{}", offset);
-                if(offset > 10000){
-                    log.warn("设备与平台的时间差较大，下发时间校正指令！");
-                    byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.REFUSE, RequestType.SETTING, DataType.TLV, EnvType.DEBUG,false,EncryptType.CRC,ValidateType.CRC);
-                    ByteBuf content = Unpooled.buffer();
-                    byte[] utcBytes = BytesUtil.utc2Bytes(System.currentTimeMillis());
-                    content.writeBytes(BytesUtil.int2TwoBytes(2));
-                    content.writeBytes(BytesUtil.int2TwoBytes(utcBytes.length));
-                    content.writeBytes(utcBytes);
-                    content.capacity(content.readableBytes());
-                    ByteBuf timeAdjustCmd = AeroMsgBuilder.buildMessage(imei,FunctionType.TIME,attr, content);
-                    ctx.writeAndFlush(timeAdjustCmd);
-                }
+                log.info("设备时间：{}", new Date(dutc));
+//                if(offset > 10000){
+//                    log.warn("设备与平台的时间差较大，下发时间校正指令！");
+//                    byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.REFUSE, EnvType.DEBUG,, RequestType.SETTING, DataType.TLV);
+//                    ByteBuf content = Unpooled.buffer();
+//                    byte[] utcBytes = BytesUtil.utc2Bytes(System.currentTimeMillis());
+//                    content.writeBytes(BytesUtil.int2TwoBytes(2));
+//                    content.writeBytes(BytesUtil.int2TwoBytes(utcBytes.length));
+//                    content.writeBytes(utcBytes);
+//                    content.capacity(content.readableBytes());
+//                    ByteBuf timeAdjustCmd = AeroMsgBuilder.buildMessage(imei,FunctionType.TIME,attr, content);
+//                    ctx.writeAndFlush(timeAdjustCmd);
+//                }
                 break;
             default:
                 break;

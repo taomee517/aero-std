@@ -7,10 +7,10 @@ package com.aero.std.common.constants;
  */
 public class AeroConst {
 
-    /**数据包最小长度:起始位(1) + 设备号(8) + 流水号（2） + 功能号（2） + 消息体属性(4) + 消息长度（2） + 校验码(2) + 停止位(1)*/
-    public static final int  MIN_LENGTH = 22;
+    /**数据包最小长度:起始位(1) + 设备号(8) + 消息体属性(3) + 功能号（2） + 流水号（4） +  消息长度（2） + 校验码(2) + 停止位(1)*/
+    public static final int  MIN_LENGTH = 23;
 
-    public static final int MAX_LENGTH = 0xffff + 24;
+    public static final int MAX_LENGTH = 0xffff + 23;
 
     /**起始符和结束符*/
     public static final byte SIGN_CODE = 0x7e;
@@ -24,6 +24,6 @@ public class AeroConst {
     /**转义后的7E*/
     public static final byte[] ESCAPE_7E = {0x7d,0x01};
 
-    public static final String PROTOCOL_VERSION = "1.0";
+    public static final String PROTOCOL_VERSION = "1";
 
 }
