@@ -1,8 +1,6 @@
 package com.aero.std.client;
 
-import com.aero.std.handler.AeroDevice;
-import com.aero.std.handler.EscapeHandler;
-import com.aero.std.handler.FrameSplitHandler;
+import com.aero.std.handler.*;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -49,9 +47,9 @@ public class Client implements InitializingBean, DisposableBean {
 //                        pipeline.addLast("encoder", new Encoder());
                         pipeline.addLast("split", new FrameSplitHandler());
 //                        pipeline.addLast("validator", new Validator());
-//                        pipeline.addLast("head", new HeaderParseHandler());
-//                        pipeline.addLast("escape", new EscapeHandler());
-                        pipeline.addLast("idle", new IdleStateHandler(20000,0,0, TimeUnit.MILLISECONDS));
+                        pipeline.addLast("head", new HeaderParseHandler());
+                        pipeline.addLast("core", new CoreParseHandler());
+                        pipeline.addLast("idle", new IdleStateHandler(30000,0,0, TimeUnit.MILLISECONDS));
                         pipeline.addLast("device", ch.attr(AeroDevice.DEVICE).get());
                     }
                 });

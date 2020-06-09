@@ -4,4 +4,7 @@ dependencies {
 
     // common-lang3
     compile group: 'org.apache.commons', name: 'commons-lang3', version: "${commonLang3Version}"
+
+    // common-codec
+//    compile group: 'org.apache.commons', name: 'commons-codec', version: "${commonLang3Version}"
 }

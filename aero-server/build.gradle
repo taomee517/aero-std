@@ -6,4 +6,9 @@ dependencies {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
     }
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2', version: "${springbootVersion}"
+    compile("org.springframework.boot:spring-boot-starter-data-redis:${springbootVersion}"){
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
+        exclude group: 'logback', module: 'logback-classic'
+    }
 }

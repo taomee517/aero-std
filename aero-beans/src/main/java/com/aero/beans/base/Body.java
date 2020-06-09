@@ -9,6 +9,9 @@ import lombok.Data;
  */
 @Data
 public class Body {
-    private long utc;
+    private long deviceUtc;
+    private long serverUtc;
+    private String loginPwd;
+    private long rebootCount;
     private Object coreData;
 }

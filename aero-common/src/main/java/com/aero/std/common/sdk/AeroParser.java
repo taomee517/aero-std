@@ -237,17 +237,52 @@ public class AeroParser {
         FunctionType functionType = header.getFun();
         int length = content.readableBytes();
         if(length>0){
+            Body body = new Body();
             switch (functionType){
                 case TIME:
-                    int typeCode = content.readShort();
-                    int len = content.readShort();
-                    byte[] value = new byte[len];
-                    content.readBytes(value);
-                    long utc = BytesUtil.bytes2Long(value);
-                    Body body = new Body();
-                    body.setUtc(utc);
+                    do{
+                        int typeCode = content.readShort();
+                        int len = content.readShort();
+                        byte[] value = new byte[len];
+                        content.readBytes(value);
+                        long utc = BytesUtil.bytes2Long(value);
+                        if (typeCode == 1) {
+                            body.setDeviceUtc(utc);
+                        }else if(typeCode == 2){
+                            body.setServerUtc(utc);
+                        }
+                    }while (content.readableBytes()>0);
+                    return Collections.singletonList(body);
+                case REGISTER:
+                    do {
+                        int typeCode = content.readShort();
+                        int len = content.readShort();
+                        byte[] value = new byte[len];
+                        content.readBytes(value);
+                        if (typeCode == 1) {
+                            long utc = BytesUtil.bytes2Long(value);
+                            body.setDeviceUtc(utc);
+                        }else if(typeCode == 2){
+                            String loginPwd = new String(value);
+                            body.setLoginPwd(loginPwd);
+                        }
+                    }while (content.readableBytes()>0);
                     return Collections.singletonList(body);
                 case LOGIN:
+                    do {
+                        int typeCode = content.readShort();
+                        int contentLen = content.readShort();
+                        if(typeCode==1){
+                            byte[] loginContent = new byte[contentLen];
+                            content.readBytes(loginContent);
+                            String loginPwd = new String(loginContent);
+                            body.setLoginPwd(loginPwd);
+                        }else if(typeCode == 2){
+                            long rebootCount = content.readLong();
+                            body.setRebootCount(rebootCount);
+                        }
+                    }while (content.readableBytes()>0);
+                    return Collections.singletonList(body);
                 case HEART_BEAT:
                 default:
                     break;

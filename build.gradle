@@ -5,6 +5,7 @@ allprojects {
         guavaVersion = '28.1-jre'
         commonLang3Version = '3.9'
         poiVersion = '4.1.0'
+        swaggerVersion = "2.9.2"
         lombokVersion = '1.18.10'
         junitVersion = '4.12'
     }

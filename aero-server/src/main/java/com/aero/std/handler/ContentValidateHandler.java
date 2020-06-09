@@ -26,7 +26,7 @@ public class ContentValidateHandler extends ChannelInboundHandlerAdapter {
             log.error("开发环境，无须校验");
             ctx.fireChannelRead(buf);
         }else if(AeroParser.validate(buf)){
-            log.error("消息校验通过");
+            log.info("消息校验通过");
             ctx.fireChannelRead(buf);
         }else {
             String hexMsg = AeroParser.buffer2Hex(buf);

@@ -1,0 +1,22 @@
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web:${springbootVersion}") {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2', version: "${springbootVersion}"
+    //springfox-swagger-ui
+    compile ("io.springfox:springfox-swagger-ui:${swaggerVersion}"){
+        exclude group:'org.springframework', module:'spring-context'
+        exclude group:'org.springframework', module:'spring-beans'
+        exclude group:'org.springframework', module:'spring-aop'
+        exclude group: 'com.fasterxml',module:'classmate'
+    }
+
+    compile ("io.springfox:springfox-swagger2:${swaggerVersion}"){
+        exclude group:'org.springframework', module:'spring-context'
+        exclude group:'org.springframework', module:'spring-beans'
+        exclude group:'org.springframework', module:'spring-aop'
+        exclude group: 'com.fasterxml',module:'classmate'
+        exclude group:'org.slf4j', module:'slf4j-api'
+        exclude group:'com.fasterxml.jackson.core', module:'jackson-annotations'
+    }
+}

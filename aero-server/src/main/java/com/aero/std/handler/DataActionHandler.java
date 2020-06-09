@@ -1,12 +1,15 @@
 package com.aero.std.handler;
 
+import com.aero.beans.base.Body;
 import com.aero.beans.base.Header;
 import com.aero.beans.base.Message;
-import com.aero.beans.constants.*;
+import com.aero.beans.constants.FormatType;
+import com.aero.beans.constants.FunctionType;
+import com.aero.beans.constants.RequestType;
+import com.aero.beans.constants.StatusCode;
 import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.sdk.AeroMsgBuilder;
 import com.aero.std.common.sdk.AeroParser;
-import com.aero.std.common.utils.BytesUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
@@ -14,7 +17,11 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.util.DigestUtils;
 
 import java.util.Date;
 
@@ -27,6 +34,10 @@ import java.util.Date;
 @Component
 @ChannelHandler.Sharable
 public class DataActionHandler extends ChannelDuplexHandler {
+
+    @Autowired
+    RedisTemplate<String, String> redisTemplate;
+
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         log.warn("与设备建立连接，remote:{}", ctx.channel().remoteAddress());
@@ -50,12 +61,39 @@ public class DataActionHandler extends ChannelDuplexHandler {
             case HEART_BEAT:
                 resp = AeroMsgBuilder.buildResponse(header, StatusCode.ACCEPT);
                 break;
+            case REGISTER:
+                long registrerUtc = data.getBodies().get(0).getDeviceUtc();
+                String factor = StringUtils.join(imei,registrerUtc);
+                String md5 = DigestUtils.md5DigestAsHex(factor.getBytes());
+                String pwd = md5.substring(md5.length()-8);
+                redisTemplate.opsForValue().set("Register:" + header.getImei(), pwd);
+                log.info("设备{}注册，计算并保存登录口令：{}",header.getImei(), pwd);
+                byte[] loginPwd = pwd.getBytes();
+                byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.SUCCESS, AeroConst.ENV, FormatType.TLV,RequestType.PUBLISH_ACK);
+                ByteBuf content = Unpooled.buffer();
+                content.writeShort(2);
+                content.writeShort(loginPwd.length);
+                content.writeBytes(loginPwd);
+                resp = AeroMsgBuilder.buildAckMessage(imei,FunctionType.REGISTER, header.getSerial(),attr,content);
+                content.release();
+                break;
             case LOGIN:
-                resp = AeroMsgBuilder.buildResponse(header, StatusCode.SUCCESS);
+                Body body = data.getBodies().get(0);
+                String loginFactor = body.getLoginPwd();
+                String loginPwdCache = redisTemplate.opsForValue().get("Register:" + header.getImei());
+                long rebootCount = body.getRebootCount();
+                log.info("设备imei：{}已重启{}次",imei, rebootCount);
+                if(loginPwdCache!=null && loginPwdCache.equalsIgnoreCase(loginFactor)){
+                    log.info("设备imei：{},登录成功！",imei);
+                    resp = AeroMsgBuilder.buildResponse(header, StatusCode.SUCCESS);
+                }else {
+                    log.info("设备imei：{},登录口令错误, src = {}, reality = {}",imei, loginPwdCache, loginFactor);
+                    ctx.close();
+                }
                 break;
             case TIME:
                 resp = AeroMsgBuilder.buildResponse(header, StatusCode.ACCEPT);
-                long dutc = data.getBodies().get(0).getUtc();
+                long dutc = data.getBodies().get(0).getDeviceUtc();
                 long utc = System.currentTimeMillis();
                 long offset = utc - dutc;
                 log.info("设备时间：{}", new Date(dutc));

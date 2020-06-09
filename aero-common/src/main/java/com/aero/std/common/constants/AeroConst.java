@@ -1,5 +1,7 @@
 package com.aero.std.common.constants;
 
+import com.aero.beans.constants.EnvType;
+
 /**
  * @author 罗涛
  * @title AeroConst
@@ -25,5 +27,7 @@ public class AeroConst {
     public static final byte[] ESCAPE_7E = {0x7d,0x01};
 
     public static final String PROTOCOL_VERSION = "1";
+
+    public static final EnvType ENV = EnvType.DEBUG;
 
 }
