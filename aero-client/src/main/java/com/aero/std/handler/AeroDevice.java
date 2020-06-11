@@ -80,6 +80,7 @@ public class AeroDevice extends ChannelDuplexHandler {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        retry = 0;
         ByteBuf loginMsg = buildLogin(imei,AeroConst.ENV,loginPwd, rebootCount);
         String loginHex = AeroParser.buffer2Hex(loginMsg);
         log.info("登录消息, hex: {}", loginHex);
@@ -118,6 +119,12 @@ public class AeroDevice extends ChannelDuplexHandler {
             ctx.writeAndFlush(loginMsg);
         }else if(FunctionType.REBOOT.equals(m.getHeader().getFun())){
             rebootCount++;
+            log.info("收到设备重启指令, hex: {}", hexBuf);
+            RequestType ackType = RequestType.getRequestType(m.getHeader().getRequest().getAckCode());
+            byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.ACCEPT,AeroConst.ENV, FormatType.TLV,ackType);
+            ByteBuf rebootAck = AeroMsgBuilder.buildAckMessage(imei,m.getHeader().getFun(),m.getHeader().getSerial(),attr,null);
+            ctx.writeAndFlush(rebootAck);
+            reconnect();
         }
     }
 

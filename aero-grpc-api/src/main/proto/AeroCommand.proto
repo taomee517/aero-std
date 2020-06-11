@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option java_package = "com.aero.std.api";
+
+service CmdService {
+  // 执行命令
+  rpc sendExecuteCmd (CommandRequest) returns (ExecuteResponse) {}
+}
+
+// 命令参数
+message CommandRequest {
+  // 控制命令实体
+  CmdEntity entity = 1;
+}
+
+// 执行指令返回值
+message ExecuteResponse {
+  // 状态
+  Status status = 1;
+  // 控制结果
+  bool result = 2;
+}
+
+// 控制命令实体
+message CmdEntity{
+  // 设备号
+  string imei = 1;
+  // 业务类型
+  int32 requestCode = 2;
+  // 功能类型
+  int32 functionCode = 3;
+  // 参数值
+  string paramsJson = 4;
+}
+
+message Status{
+  //状态码
+  StatusCode statusCode = 1;
+  //消息内容
+  string message = 2;
+}
+
+enum StatusCode{
+  SUCCESS = 0;
+  FAIL = 1;
+  EXCEPTION = 2;
+  OFFLINE = 3;
+  UNSUPPORTED = 4;
+  CHANNEL_NOT_ACTIVE = 5;
+  TIME_OUT = 6;
+}

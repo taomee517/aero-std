@@ -21,7 +21,7 @@ public class FrameSplitHandler extends ByteToMessageDecoder {
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         try {
             ByteBuf frame = AeroParser.split(in);
-//            showHexData(frame);
+            showHexData(frame);
             out.add(frame);
         } finally {
             resetBuffer(in);

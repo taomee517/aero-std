@@ -1,4 +1,10 @@
 dependencies {
+    compile(project(":aero-grpc-api")){
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter'
+        exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
+        exclude group: 'net.devh', module: 'grpc-server-spring-boot-starter'
+    }
     compile("org.springframework.boot:spring-boot-starter-web:${springbootVersion}") {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
     }

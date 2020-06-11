@@ -197,7 +197,7 @@ public class AeroParser {
         /**属性-end*/
 
         //功能号
-        int funId = in.readShort();
+        int funId = in.readUnsignedShort();
         FunctionType func = FunctionType.getFunctionType(funId);
         //流水号-设备端
         int serial = in.readShort();

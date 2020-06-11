@@ -1,18 +1,15 @@
 package com.aero.std.server;
 
-import com.aero.std.common.constants.AeroConst;
 import com.aero.std.context.ProtocolContext;
 import com.aero.std.handler.FrameSplitHandler;
 import com.aero.std.handler.HandlerCenter;
 import com.aero.std.protocol.IProtocol;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
@@ -61,8 +58,8 @@ public class NettyServer implements SmartLifecycle {
                             pipeline.addLast("head", handlers.headerParseHandler);
                             pipeline.addLast("core", handlers.coreParseHandler);
                             pipeline.addLast("action", handlers.dataActionHandler);
-//                            pipeline.addLast("idle", new IdleStateHandler(0,30,0, TimeUnit.SECONDS));
-//                            pipeline.addLast("heart-beat", handlers.getHeartBeatHandler());
+                            pipeline.addLast("order-convert", handlers.orderConvertHandler);
+                            pipeline.addLast("sign-mark", handlers.replySignMarkHandler);
                         }
                     });
             for(IProtocol tcp: ProtocolContext.getAllProtocols()){

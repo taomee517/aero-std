@@ -5,6 +5,10 @@ netty:
   monitor:
     port: 26321
 
+grpc:
+  server:
+    port: 50051
+
 
 spring:
   redis:

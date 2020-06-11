@@ -4,6 +4,7 @@ allprojects {
         nettyVersion = '4.1.48.Final'
         guavaVersion = '28.1-jre'
         commonLang3Version = '3.9'
+        springGrpcVersion = '2.6.2.RELEASE'
         poiVersion = '4.1.0'
         swaggerVersion = "2.9.2"
         lombokVersion = '1.18.10'
@@ -25,6 +26,8 @@ allprojects {
             //将冲突解决策略改为发生冲突时报错
             failOnVersionConflict()
             force "org.slf4j:slf4j-api:1.7.30"
+            force "com.google.guava:guava:28.1-android"
+//            force "com.google.protobuf:protobuf-java:3.10.0"
         }
     }
 

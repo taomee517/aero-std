@@ -10,6 +10,8 @@ import com.aero.beans.constants.StatusCode;
 import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.sdk.AeroMsgBuilder;
 import com.aero.std.common.sdk.AeroParser;
+import com.aero.std.context.SessionContext;
+import com.aero.std.grpc.ReplyUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
@@ -23,7 +25,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
 
-import java.util.Date;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author 罗涛
@@ -38,6 +40,9 @@ public class DataActionHandler extends ChannelDuplexHandler {
     @Autowired
     RedisTemplate<String, String> redisTemplate;
 
+    @Autowired
+    SessionContext sessionContext;
+
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         log.warn("与设备建立连接，remote:{}", ctx.channel().remoteAddress());
@@ -46,6 +51,8 @@ public class DataActionHandler extends ChannelDuplexHandler {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.warn("与设备断开连接");
+        String imei = sessionContext.getImei(ctx);
+        sessionContext.removeChannel(imei);
     }
 
     @Override
@@ -96,19 +103,7 @@ public class DataActionHandler extends ChannelDuplexHandler {
                 long dutc = data.getBodies().get(0).getDeviceUtc();
                 long utc = System.currentTimeMillis();
                 long offset = utc - dutc;
-                log.info("设备时间：{}", new Date(dutc));
-//                if(offset > 10000){
-//                    log.warn("设备与平台的时间差较大，下发时间校正指令！");
-//                    byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.REFUSE, EnvType.DEBUG,, RequestType.SETTING, DataType.TLV);
-//                    ByteBuf content = Unpooled.buffer();
-//                    byte[] utcBytes = BytesUtil.utc2Bytes(System.currentTimeMillis());
-//                    content.writeBytes(BytesUtil.int2TwoBytes(2));
-//                    content.writeBytes(BytesUtil.int2TwoBytes(utcBytes.length));
-//                    content.writeBytes(utcBytes);
-//                    content.capacity(content.readableBytes());
-//                    ByteBuf timeAdjustCmd = AeroMsgBuilder.buildMessage(imei,FunctionType.TIME,attr, content);
-//                    ctx.writeAndFlush(timeAdjustCmd);
-//                }
+                log.info("平台与设备的时间差：offset = {} ms", offset);
                 break;
             default:
                 break;
@@ -117,6 +112,12 @@ public class DataActionHandler extends ChannelDuplexHandler {
             String hexResp = AeroParser.buffer2Hex(resp);
             log.info("响应设备：{}", hexResp);
             ctx.writeAndFlush(resp);
+        }
+        //删除过期的key
+        sessionContext.replyFutureCache.cleanUp();
+        CompletableFuture<Message> replyFuture = ReplyUtil.signMatch(sessionContext.replyFutureCache.asMap(),data);
+        if (replyFuture!=null) {
+            replyFuture.complete(data);
         }
     }
 

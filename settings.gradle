@@ -4,4 +4,5 @@ include 'aero-client'
 include 'aero-common'
 include 'aero-beans'
 include 'aero-terminal'
+include 'aero-grpc-api'
 

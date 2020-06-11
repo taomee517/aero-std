@@ -1,0 +1,61 @@
+//利用gradle protobuf 插件自动生成java代码：https://dev.to/techschoolguru/config-gradle-to-generate-java-code-from-protobuf-1cla
+//Spring Boot 2+gRPC 学习系列1:搭建Spring Boot 2+gRPC本地项目: https://blog.csdn.net/alinyua/article/details/83030149
+//grpc-spring-boot-starter官方文档：https://yidongnan.github.io/grpc-spring-boot-starter/zh-CN/server/getting-started.html
+
+//buildscript {
+//    repositories {
+//        maven { url "https://maven.aliyun.com/repository/central/" }
+//    }
+//    dependencies {
+//        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.12'
+//    }
+//}
+//
+//plugins{
+//    id 'java'
+//    id 'com.google.protobuf' version "0.8.12"
+//}
+//
+//protobuf {
+//    protoc {
+//        artifact = 'com.google.protobuf:protoc:3.6.0'
+//    }
+//
+//    plugins {
+//        grpc {
+//            artifact = 'io.grpc:protoc-gen-grpc-java:1.25.0'
+//        }
+//    }
+//
+//    generateProtoTasks {
+//        all()*.plugins {
+//            grpc {}
+//        }
+//    }
+//
+//    generatedFilesBaseDir = "$projectDir/src/generated"
+//
+//    clean {
+//        delete generatedFilesBaseDir
+//    }
+//}
+
+dependencies {
+
+    //grpc-server-spring-boot-starter 整合方案依赖
+    compile(group: 'net.devh', name: 'grpc-server-spring-boot-starter', version: "${springGrpcVersion}"){
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
+        exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
+        exclude group: 'org.checkerframework', module: 'checker-compat-qual'
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
+    compile(group: 'net.devh', name: 'grpc-spring-boot-starter', version: "${springGrpcVersion}"){
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
+        exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
+        exclude group: 'org.checkerframework', module: 'checker-compat-qual'
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
+}
+

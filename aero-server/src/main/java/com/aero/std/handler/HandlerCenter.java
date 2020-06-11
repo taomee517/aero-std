@@ -34,4 +34,10 @@ public class HandlerCenter {
 
     @Autowired
     public DataActionHandler dataActionHandler;
+
+    @Autowired
+    public ReplySignMarkHandler replySignMarkHandler;
+
+    @Autowired
+    public OrderConvertHandler orderConvertHandler;
 }
