@@ -11,6 +11,7 @@ import lombok.Data;
  */
 @Data
 public class Order {
+    private int orderId;
     private String imei;
     private RequestType requestType;
     private FunctionType functionType;

@@ -27,7 +27,7 @@ public class OrderConvertHandler extends ChannelOutboundHandlerAdapter {
             Order order = ((Order) msg);
             byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.NONE,AeroConst.ENV, FormatType.TLV, order.getRequestType());
             ByteBuf content = order.getParams()==null?null:Unpooled.wrappedBuffer(order.getParams());
-            ByteBuf buffer = AeroMsgBuilder.buildRequestMessage(order.getImei(),order.getFunctionType(),attr, content);
+            ByteBuf buffer = AeroMsgBuilder.buildMessage(order.getImei(),order.getOrderId(),0, order.getFunctionType().getCode(),attr, content);
             ctx.writeAndFlush(buffer);
         }else {
             ctx.writeAndFlush(msg);

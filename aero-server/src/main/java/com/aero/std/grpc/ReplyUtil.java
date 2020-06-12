@@ -1,11 +1,9 @@
 package com.aero.std.grpc;
 
-import com.aero.beans.base.Body;
 import com.aero.beans.base.Header;
 import com.aero.beans.base.Message;
 import com.aero.beans.constants.RequestType;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 
@@ -18,6 +16,7 @@ public class ReplyUtil {
     public static ReplySign buildReplySign(Order order){
         RequestType ackType = RequestType.getRequestType(order.getRequestType().getAckCode());
         return ReplySign.builder()
+                .orderId(order.getOrderId())
                 .imei(order.getImei())
                 .requestType(ackType)
                 .functionType(order.getFunctionType())
@@ -27,6 +26,13 @@ public class ReplyUtil {
     public static CompletableFuture signMatch(ConcurrentMap<ReplySign, CompletableFuture> promiseMap, Message msg) {
         Header header = msg.getHeader();
         for (ReplySign sign : promiseMap.keySet()) {
+            //非ack消息
+            if (header.getRequest().getAckCode()!=-1) {
+                continue;
+            }
+            if (sign.getOrderId()!= header.getRequestId()) {
+                continue;
+            }
             if (!sign.getImei().equals(header.getImei())) {
                 continue;
             }

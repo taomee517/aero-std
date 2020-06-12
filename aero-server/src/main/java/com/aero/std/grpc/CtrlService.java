@@ -5,6 +5,7 @@ import com.aero.beans.constants.FunctionType;
 import com.aero.beans.constants.RequestType;
 import com.aero.std.api.AeroCommand;
 import com.aero.std.api.CmdServiceGrpc;
+import com.aero.std.common.utils.SnUtil;
 import com.aero.std.context.SessionContext;
 import io.grpc.stub.StreamObserver;
 import io.netty.channel.Channel;
@@ -53,6 +54,7 @@ public class CtrlService extends CmdServiceGrpc.CmdServiceImplBase {
             return;
         }
         Order order = new Order();
+        order.setOrderId(SnUtil.getSn(imei));
         order.setImei(imei);
         order.setRequestType(RequestType.getRequestType(requestCode));
         order.setFunctionType(FunctionType.getFunctionType(functionCode));

@@ -24,7 +24,7 @@ public class Header {
 //    private int currIndex;
     private FunctionType fun;
     private int serial;
-    private int remoteSerial;
+    private int requestId;
     private int length;
     private byte[] crc;
     private ByteBuf content;

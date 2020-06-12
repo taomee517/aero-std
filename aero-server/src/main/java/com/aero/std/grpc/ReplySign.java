@@ -13,7 +13,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ReplySign {
-    private int orderSerial;
+    private int orderId;
     private String imei;
     private RequestType requestType;
     private FunctionType functionType;

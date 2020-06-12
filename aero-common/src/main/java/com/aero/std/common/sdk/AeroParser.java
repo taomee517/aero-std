@@ -221,7 +221,7 @@ public class AeroParser {
         header.setRequest(requestType);
         header.setFun(func);
         header.setSerial(serial);
-        header.setRemoteSerial(requestSerial);
+        header.setRequestId(requestSerial);
 //        header.setEncrypt(encryptType);
 //        header.setValidateType(validateType);
 //        header.setSplitPack(isSplitPack);
