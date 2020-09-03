@@ -7,9 +7,11 @@ import com.aero.beans.constants.FormatType;
 import com.aero.beans.constants.FunctionType;
 import com.aero.beans.constants.RequestType;
 import com.aero.beans.constants.StatusCode;
+import com.aero.beans.content.DetectData;
 import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.sdk.AeroMsgBuilder;
 import com.aero.std.common.sdk.AeroParser;
+import com.aero.std.common.utils.BytesUtil;
 import com.aero.std.context.SessionContext;
 import com.aero.std.grpc.ReplyUtil;
 import io.netty.buffer.ByteBuf;
@@ -22,10 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.util.ByteUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * @author 罗涛
@@ -45,14 +51,30 @@ public class DataActionHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.warn("与设备建立连接，remote:{}", ctx.channel().remoteAddress());
+        try {
+            String remoteAddr = ctx.channel().remoteAddress().toString();
+//            log.info("判断是否阿里云health-check: ip={}", remoteAddr);
+            if (remoteAddr.contains("100.")) {
+                return;
+            }
+            log.warn("与设备建立连接，remote:{}", ctx.channel().remoteAddress());
+        } finally {
+            ctx.fireChannelActive();
+        }
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        String remoteAddr = ctx.channel().remoteAddress().toString();
+//        log.info("判断是否阿里云health-check: ip={}", remoteAddr);
+        if (remoteAddr.contains("100.")) {
+            ctx.close();
+            return;
+        }
         log.warn("与设备断开连接");
         String imei = sessionContext.getImei(ctx);
         sessionContext.removeChannel(imei);
+        ctx.close();
     }
 
     @Override
@@ -64,12 +86,14 @@ public class DataActionHandler extends ChannelDuplexHandler {
         ByteBuf resp = null;
         FunctionType func = data.getHeader().getFun();
         log.info("收到设备消息，消息类型：{}", func.getDesc());
+        Body body = data.getBody();
         switch (func){
             case HEART_BEAT:
                 resp = AeroMsgBuilder.buildResponse(header, StatusCode.ACCEPT);
                 break;
             case REGISTER:
-                long registrerUtc = data.getBodies().get(0).getDeviceUtc();
+//                long registrerUtc = body.getDeviceUtc();
+                long registrerUtc = System.currentTimeMillis();
                 String factor = StringUtils.join(imei,registrerUtc);
                 String md5 = DigestUtils.md5DigestAsHex(factor.getBytes());
                 String pwd = md5.substring(md5.length()-8);
@@ -78,32 +102,63 @@ public class DataActionHandler extends ChannelDuplexHandler {
                 byte[] loginPwd = pwd.getBytes();
                 byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.SUCCESS, AeroConst.ENV, FormatType.TLV,RequestType.PUBLISH_ACK);
                 ByteBuf content = Unpooled.buffer();
-                content.writeShort(2);
+                content.writeShort(1);
                 content.writeShort(loginPwd.length);
                 content.writeBytes(loginPwd);
                 resp = AeroMsgBuilder.buildAckMessage(imei,FunctionType.REGISTER, header.getSerial(),attr,content);
                 content.release();
                 break;
             case LOGIN:
-                Body body = data.getBodies().get(0);
                 String loginFactor = body.getLoginPwd();
                 String loginPwdCache = redisTemplate.opsForValue().get("Register:" + header.getImei());
                 long rebootCount = body.getRebootCount();
                 log.info("设备imei：{}已重启{}次",imei, rebootCount);
                 if(loginPwdCache!=null && loginPwdCache.equalsIgnoreCase(loginFactor)){
                     log.info("设备imei：{},登录成功！",imei);
-                    resp = AeroMsgBuilder.buildResponse(header, StatusCode.SUCCESS);
+                    byte[] loginAttr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION, StatusCode.SUCCESS, AeroConst.ENV, FormatType.TLV,RequestType.PUBLISH_ACK);
+                    ByteBuf loginAckContent = Unpooled.buffer();
+                    loginAckContent.writeShort(3);
+                    loginAckContent.writeShort(6);
+                    byte[] timeBytes = BytesUtil.utc2Bytes(System.currentTimeMillis());
+                    loginAckContent.writeBytes(timeBytes);
+                    resp = AeroMsgBuilder.buildAckMessage(imei,FunctionType.LOGIN, header.getSerial(),loginAttr,loginAckContent);
+//                    resp = AeroMsgBuilder.buildResponse(header, StatusCode.SUCCESS);
                 }else {
                     log.info("设备imei：{},登录口令错误, src = {}, reality = {}",imei, loginPwdCache, loginFactor);
                     ctx.close();
                 }
                 break;
             case TIME:
+                log.info("校时请求：imei = {}", imei);
                 resp = AeroMsgBuilder.buildResponse(header, StatusCode.ACCEPT);
-                long dutc = data.getBodies().get(0).getDeviceUtc();
-                long utc = System.currentTimeMillis();
-                long offset = utc - dutc;
-                log.info("平台与设备的时间差：offset = {} ms", offset);
+//                long dutc = body.getDeviceUtc();
+//                long utc = System.currentTimeMillis();
+//                long offset = utc - dutc;
+
+                break;
+            case CORE_DATA:
+                log.info("收到核心数据：HEX = {}", BytesUtil.bytes2HexWithBlank(((byte[]) body.getCoreData()),true));
+
+//                DetectData detectData = body.getDetectData();
+//                if(Objects.nonNull(detectData)) {
+//                    List<Float> currents = detectData.getChannelCurrent();
+//                    if (Objects.nonNull(currents)) {
+//                        StringBuilder sb = new StringBuilder();
+//                        currents.forEach(new Consumer<Float>() {
+//                            @Override
+//                            public void accept(Float aFloat) {
+//                                sb.append(aFloat);
+//                                sb.append(",");
+//                            }
+//                        });
+//                        log.info("收到设备采集电流数据(uA)：{}", sb.toString());
+//                    }
+//                    Integer freq = detectData.getFrequency();
+//                    if(Objects.nonNull(freq)){
+//                        log.info("收到设备采集频率数据(Hz)：{}", freq);
+//                    }
+                    resp = AeroMsgBuilder.buildResponse(header, StatusCode.ACCEPT);
+//                }
                 break;
             default:
                 break;
@@ -147,6 +202,11 @@ public class DataActionHandler extends ChannelDuplexHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        String remoteAddr = ctx.channel().remoteAddress().toString();
+        if (remoteAddr.contains("100.")) {
+            ctx.close();
+            return;
+        }
         log.error("DataActionHandler 发生异常：{}", cause);
         ctx.close();
     }

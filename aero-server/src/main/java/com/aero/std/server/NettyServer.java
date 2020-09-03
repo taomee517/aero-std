@@ -91,6 +91,22 @@ public class NettyServer implements SmartLifecycle {
 
     @Override
     public boolean isRunning() {
-        return false;
+        return running;
     }
+
+//
+//    @Override
+//    public boolean isAutoStartup() {
+//        return false;
+//    }
+//
+//    @Override
+//    public void stop(Runnable callback) {
+//        callback.run();
+//    }
+
+//    @Override
+//    public int getPhase() {
+//        return 0;
+//    }
 }

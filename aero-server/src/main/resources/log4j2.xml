@@ -4,7 +4,7 @@
 <configuration status="INFO">
     <!-- 全局参数 -->
     <Properties>
-        <property name="FILE_PATH" value="log/log4j2" />
+        <property name="FILE_PATH" value="log" />
         <Property name="APP_NAME">aero-std-server</Property>
 <!--        <Property name="STDOUT_PATTERN">%d{yyyy-MM-dd HH:mm:ss,SSS} | %style{${sys:local-ip}}{highlight,cyan} | %style{%-5level}{highlight,green} | %style{%t}{blue} | %style{%c{1.}:%L}{yellow} | %m%n</Property>-->
         <Property name="STDOUT_PATTERN">%d{yyyy-MM-dd HH:mm:ss,SSS} | %style{%-5level}{highlight,green} | %style{%t}{blue} | %style{%c{1.}:%L}{yellow} | %m%n</Property>

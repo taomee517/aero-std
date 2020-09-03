@@ -13,7 +13,7 @@ allprojects {
 
     apply plugin: "java"
     group 'com.aero'
-    version '1.0-SNAPSHOT'
+    version '0.1-SNAPSHOT'
     sourceCompatibility = 1.8
 
     tasks.withType(JavaCompile) {
@@ -52,5 +52,7 @@ allprojects {
         compile group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
         annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
         testCompile group: 'junit', name: 'junit', version: "${junitVersion}"
+
     }
+
 }

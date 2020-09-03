@@ -1,5 +1,6 @@
 package com.aero.beans.base;
 
+import com.aero.beans.content.DetectData;
 import lombok.Data;
 
 /**
@@ -14,4 +15,5 @@ public class Body {
     private String loginPwd;
     private long rebootCount;
     private Object coreData;
+    private DetectData detectData;
 }

@@ -12,5 +12,5 @@ import java.util.List;
 @Data
 public class Message {
     private Header header;
-    private List<Body> bodies;
+    private Body body;
 }

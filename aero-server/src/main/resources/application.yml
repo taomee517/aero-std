@@ -1,13 +1,10 @@
 server:
   port: 15661
 
-netty:
-  monitor:
-    port: 26321
-
 grpc:
   server:
-    port: 50051
+    ## 线上正式环境已经在用了50051端口
+    port: 51744
 
 
 spring:

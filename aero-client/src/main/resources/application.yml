@@ -5,7 +5,8 @@ server:
 remote:
   server:
     ip: 127.0.0.1
-    port: 34251
+#    ip: 39.97.5.92
+    port: 51703
 
 protocol:
   env:

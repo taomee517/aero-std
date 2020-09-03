@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.InetSocketAddress;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -111,7 +112,7 @@ public class AeroDevice extends ChannelDuplexHandler {
         String hexBuf = AeroParser.buffer2Hex(m.getHeader().getRaw());
         log.info("设备{}收到服务器消息：type = {},msg = {}", this.imei, m.getHeader().getFun(), hexBuf);
         if(FunctionType.REGISTER.equals(m.getHeader().getFun())){
-            loginPwd = m.getBodies().get(0).getLoginPwd();
+            loginPwd = m.getBody().getLoginPwd();
             log.info("设备登录口令：{}",loginPwd);
             ByteBuf loginMsg = buildLogin(imei,AeroConst.ENV,loginPwd, rebootCount);
             String loginHex = AeroParser.buffer2Hex(loginMsg);
@@ -125,6 +126,8 @@ public class AeroDevice extends ChannelDuplexHandler {
             ByteBuf rebootAck = AeroMsgBuilder.buildAckMessage(imei,m.getHeader().getFun(),m.getHeader().getSerial(),attr,null);
             ctx.writeAndFlush(rebootAck);
             reconnect();
+        }else if (FunctionType.LOGIN.equals(m.getHeader().getFun())){
+            log.info("登录回复, statusCode = {}, timestamp = {}", m.getHeader().getStatusCode(), m.getBody().getServerUtc());
         }
     }
 
@@ -139,7 +142,13 @@ public class AeroDevice extends ChannelDuplexHandler {
         if(evt instanceof IdleStateEvent){
             IdleStateEvent idleEvt = ((IdleStateEvent) evt);
             if(idleEvt.state().equals(IdleState.READER_IDLE)){
-                sendHeartbeat(ctx);
+//                sendHeartbeat(ctx);
+                boolean flag = new Random().nextBoolean();
+                if (flag) {
+                    sendDetectCurrentData(ctx);
+                }else {
+                    sendDetectFrequencyData(ctx);
+                }
             }
         }
     }
@@ -175,6 +184,33 @@ public class AeroDevice extends ChannelDuplexHandler {
         ctx.channel().writeAndFlush(buffer);
     }
 
+    private void sendDetectCurrentData(ChannelHandlerContext ctx){
+        ByteBuf coreBuffer = Unpooled.buffer(16+4);
+        coreBuffer.writeShort(1);
+        coreBuffer.writeShort(4*4);
+        for(int i=0;i<4;i++){
+            float singleData = new Random().nextFloat() * 2000 + 2000;
+            coreBuffer.writeFloat(singleData);
+        }
+        byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.NONE,AeroConst.ENV,FormatType.TLV,RequestType.PUBLISH);
+        ByteBuf data = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.CORE_DATA,attr,coreBuffer);
+        String hexMsg = AeroParser.buffer2Hex(data);
+        log.info("发送采集电流数据, hex: {}", hexMsg);
+        ctx.writeAndFlush(data);
+    }
+
+    private void sendDetectFrequencyData(ChannelHandlerContext ctx){
+        ByteBuf coreBuffer = Unpooled.buffer(4+4);
+        coreBuffer.writeShort(2);
+        coreBuffer.writeShort(4);
+        coreBuffer.writeInt(983);
+        byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.NONE,AeroConst.ENV,FormatType.TLV,RequestType.PUBLISH);
+        ByteBuf data = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.CORE_DATA,attr,coreBuffer);
+        String hexMsg = AeroParser.buffer2Hex(data);
+        log.info("发送采集频率数据, hex: {}", hexMsg);
+        ctx.writeAndFlush(data);
+    }
+
     private ByteBuf buildHeartBeat(String imei, EnvType env){
         byte[] attr = buildRequestAtrribute(env);
         ByteBuf msg = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.HEART_BEAT, attr,null);
@@ -198,12 +234,12 @@ public class AeroDevice extends ChannelDuplexHandler {
 
     private ByteBuf buildRegister(String imei, EnvType env){
         byte[] attr = buildRequestAtrribute(env);
-        ByteBuf content = Unpooled.buffer();
-        byte[] utcBytes = BytesUtil.utc2Bytes(System.currentTimeMillis());
-        content.writeShort(1);
-        content.writeShort(utcBytes.length);
-        content.writeBytes(utcBytes);
-        ByteBuf msg = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.REGISTER, attr,content);
+//        ByteBuf content = Unpooled.buffer();
+//        byte[] utcBytes = BytesUtil.utc2Bytes(System.currentTimeMillis());
+//        content.writeShort(1);
+//        content.writeShort(utcBytes.length);
+//        content.writeBytes(utcBytes);
+        ByteBuf msg = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.REGISTER, attr,null);
         return msg;
     }
 

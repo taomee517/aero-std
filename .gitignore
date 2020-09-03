@@ -1,0 +1,7 @@
+# Project exclude paths
+/.gradle/
+/aero-beans/build/
+/aero-common/build/
+/aero-common/build/classes/java/main/
+/aero-server/build/
+/aero-server/build/classes/java/main/

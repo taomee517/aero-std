@@ -24,10 +24,10 @@ public class CoreParseHandler extends MessageToMessageDecoder {
     protected void decode(ChannelHandlerContext ctx, Object msg, List out) throws Exception {
         Header header = ((Header) msg);
 //        ByteBuf content = header.getContent();
-        List<Body> bodies = AeroParser.parseBody(header);
+        Body body = AeroParser.parseBody(header);
         Message message = new Message();
         message.setHeader(header);
-        message.setBodies(bodies);
+        message.setBody(body);
         out.add(message);
     }
 }

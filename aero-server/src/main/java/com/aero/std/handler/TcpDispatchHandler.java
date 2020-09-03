@@ -27,7 +27,7 @@ public class TcpDispatchHandler extends ChannelInboundHandlerAdapter {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         String address = ctx.channel().localAddress().toString();
         int port = Integer.valueOf(StringUtils.split(address, ":")[1]);
-        log.info("请求端口：" + port);
+//        log.info("请求端口：" + port);
         this.handlerRemoved(ctx);
         ctx.fireChannelActive();
     }

@@ -12,6 +12,6 @@ import org.springframework.stereotype.Component;
 public class AeroProtocol implements IProtocol {
     @Override
     public int port() {
-        return 34251;
+        return 51703;
     }
 }

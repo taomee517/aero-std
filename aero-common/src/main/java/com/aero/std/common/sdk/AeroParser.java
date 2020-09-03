@@ -3,6 +3,7 @@ package com.aero.std.common.sdk;
 import com.aero.beans.base.Body;
 import com.aero.beans.base.Header;
 import com.aero.beans.constants.*;
+import com.aero.beans.content.DetectData;
 import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.utils.BytesUtil;
 import com.aero.std.common.utils.ValidateUtil;
@@ -10,6 +11,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ByteProcessor;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -232,12 +234,15 @@ public class AeroParser {
         return header;
     }
 
-    public static List<Body> parseBody(Header header){
+    public static Body parseBody(Header header){
         ByteBuf content = header.getContent();
         FunctionType functionType = header.getFun();
         int length = content.readableBytes();
         if(length>0){
             Body body = new Body();
+            byte[] bytes = new byte[length];
+            content.getBytes(0, bytes);
+            body.setCoreData(bytes);
             switch (functionType){
                 case TIME:
                     do{
@@ -247,27 +252,22 @@ public class AeroParser {
                         content.readBytes(value);
                         long utc = BytesUtil.bytes2Long(value);
                         if (typeCode == 1) {
-                            body.setDeviceUtc(utc);
-                        }else if(typeCode == 2){
                             body.setServerUtc(utc);
                         }
                     }while (content.readableBytes()>0);
-                    return Collections.singletonList(body);
+                    return body;
                 case REGISTER:
                     do {
                         int typeCode = content.readShort();
                         int len = content.readShort();
                         byte[] value = new byte[len];
                         content.readBytes(value);
-                        if (typeCode == 1) {
-                            long utc = BytesUtil.bytes2Long(value);
-                            body.setDeviceUtc(utc);
-                        }else if(typeCode == 2){
+                        if (typeCode == 1){
                             String loginPwd = new String(value);
                             body.setLoginPwd(loginPwd);
                         }
                     }while (content.readableBytes()>0);
-                    return Collections.singletonList(body);
+                    return body;
                 case LOGIN:
                     do {
                         int typeCode = content.readShort();
@@ -280,9 +280,33 @@ public class AeroParser {
                         }else if(typeCode == 2){
                             long rebootCount = content.readLong();
                             body.setRebootCount(rebootCount);
+                        }else if(typeCode == 3){
+                            byte[] value = new byte[contentLen];
+                            content.readBytes(value);
+                            long utc = BytesUtil.bytes2Long(value);
+                            body.setServerUtc(utc);
                         }
                     }while (content.readableBytes()>0);
-                    return Collections.singletonList(body);
+                    return body;
+                case CORE_DATA:
+
+//                    DetectData detectData = new DetectData();
+//                    do {
+//                        int typeCode = content.readShort();
+//                        int contentLen = content.readShort();
+//                        if(typeCode==1){
+//                            List<Float> channelCurrent = new ArrayList<>();
+//                            for (int i = 0; i < contentLen/4; i++) {
+//                                channelCurrent.add(content.readFloat());
+//                            }
+//                            detectData.setChannelCurrent(channelCurrent);
+//                        }else if(typeCode==2){
+//                            int freq = content.readInt();
+//                            detectData.setFrequency(freq);
+//                        }
+//                        body.setDetectData(detectData);
+//                    }while (content.readableBytes()>0);
+                    return body;
                 case HEART_BEAT:
                 default:
                     break;
