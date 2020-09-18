@@ -9,4 +9,8 @@ import lombok.Data;
  */
 @Data
 public class DeviceInfo {
+    int heartBeatInterval;
+    int detectInterval;
+    String masterUrl;
+    String slaveUrl;
 }

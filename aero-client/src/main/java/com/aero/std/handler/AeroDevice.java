@@ -1,7 +1,9 @@
 package com.aero.std.handler;
 
+import com.aero.beans.base.Body;
 import com.aero.beans.base.Message;
 import com.aero.beans.constants.*;
+import com.aero.beans.content.DeviceInfo;
 import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.sdk.AeroMsgBuilder;
 import com.aero.std.common.sdk.AeroParser;
@@ -20,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.InetSocketAddress;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +44,7 @@ public class AeroDevice extends ChannelDuplexHandler {
     private EnvType envType;
     private static long rebootCount = 0L;
     public static String loginPwd;
+    public boolean isLogin = false;
     public static final AttributeKey<ChannelHandler> DEVICE = AttributeKey.valueOf("DEVICE");
 
     public AeroDevice(String imei, EnvType envType){
@@ -102,6 +106,7 @@ public class AeroDevice extends ChannelDuplexHandler {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.warn("设备{}与平台断开连接！", this.imei);
+        isLogin = false;
         ctx.close();
         reconnect();
     }
@@ -111,14 +116,16 @@ public class AeroDevice extends ChannelDuplexHandler {
         Message m = ((Message) msg);
         String hexBuf = AeroParser.buffer2Hex(m.getHeader().getRaw());
         log.info("设备{}收到服务器消息：type = {},msg = {}", this.imei, m.getHeader().getFun(), hexBuf);
-        if(FunctionType.REGISTER.equals(m.getHeader().getFun())){
+        FunctionType fun = m.getHeader().getFun();
+        RequestType request = m.getHeader().getRequest();
+        if(FunctionType.REGISTER.equals(fun)){
             loginPwd = m.getBody().getLoginPwd();
             log.info("设备登录口令：{}",loginPwd);
             ByteBuf loginMsg = buildLogin(imei,AeroConst.ENV,loginPwd, rebootCount);
             String loginHex = AeroParser.buffer2Hex(loginMsg);
             log.info("登录消息, hex: {}", loginHex);
             ctx.writeAndFlush(loginMsg);
-        }else if(FunctionType.REBOOT.equals(m.getHeader().getFun())){
+        }else if(FunctionType.REBOOT.equals(fun)){
             rebootCount++;
             log.info("收到设备重启指令, hex: {}", hexBuf);
             RequestType ackType = RequestType.getRequestType(m.getHeader().getRequest().getAckCode());
@@ -126,8 +133,53 @@ public class AeroDevice extends ChannelDuplexHandler {
             ByteBuf rebootAck = AeroMsgBuilder.buildAckMessage(imei,m.getHeader().getFun(),m.getHeader().getSerial(),attr,null);
             ctx.writeAndFlush(rebootAck);
             reconnect();
-        }else if (FunctionType.LOGIN.equals(m.getHeader().getFun())){
-            log.info("登录回复, statusCode = {}, timestamp = {}", m.getHeader().getStatusCode(), m.getBody().getServerUtc());
+        }else if (FunctionType.LOGIN.equals(fun)){
+            StatusCode statusCode = m.getHeader().getStatusCode();
+            log.info("登录回复, statusCode = {}, timestamp = {}", statusCode, m.getBody().getServerUtc());
+            if(StatusCode.SUCCESS.equals(statusCode)){
+                isLogin = true;
+            }
+        }
+
+        switch (request){
+            case QUERY:
+                if(FunctionType.DEVICE_INFO.equals(fun)){
+                    RequestType ackType = RequestType.getRequestType(m.getHeader().getRequest().getAckCode());
+                    byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.SUCCESS,AeroConst.ENV, FormatType.TLV,ackType);
+                    ByteBuf content = Unpooled.buffer();
+                    content.writeShort(1);
+                    content.writeShort(imei.length());
+                    content.writeBytes(imei.getBytes());
+                    ByteBuf rebootAck = AeroMsgBuilder.buildAckMessage(imei,m.getHeader().getFun(),m.getHeader().getSerial(),attr,content);
+                    ctx.writeAndFlush(rebootAck);
+                    content.release();
+                }
+                break;
+            case SETTING:
+                Body body = m.getBody();
+                if(Objects.isNull(body)){
+                    log.error("解析结果BODY为空！！");
+                    return;
+                }
+                DeviceInfo deviceInfo = body.getDeviceInfo();
+                switch (fun){
+                    case SERVER_URL:
+                        log.info("收到设置上线地址指令：master = {}, slave = {}", deviceInfo.getMasterUrl(), deviceInfo.getSlaveUrl());
+                        break;
+                    case INTERVAL:
+                        log.info("收到设置频率指令：heart = {}, collect = {}", deviceInfo.getHeartBeatInterval(), deviceInfo.getDetectInterval());
+                        break;
+                    case LOWER_THRESHOLD:
+                        break;
+                }
+                RequestType ackType = RequestType.getRequestType(m.getHeader().getRequest().getAckCode());
+                byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.SUCCESS,AeroConst.ENV, FormatType.TLV,ackType);
+                ByteBuf settingAck = AeroMsgBuilder.buildAckMessage(imei,m.getHeader().getFun(),m.getHeader().getSerial(),attr,null);
+                ctx.writeAndFlush(settingAck);
+                break;
+            case EXECUTE:
+            case PUBLISH:
+                break;
         }
     }
 
@@ -149,13 +201,18 @@ public class AeroDevice extends ChannelDuplexHandler {
                 }else {
                     sendDetectFrequencyData(ctx);
                 }
+
+//                String hex = "7e 08 13 46 33 46 54 13 68 01 00 84 20 00 00 0f 00 00 00 08 00 02 00 04 00 00 01 7d 01 be 7e";
+//                byte[] bytes = BytesUtil.hex2Bytes(hex);
+//                ByteBuf buf = Unpooled.wrappedBuffer(bytes);
+//                ctx.writeAndFlush(buf);
             }
         }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("发生异常：{}", cause);
+        log.error("发生异常：" + cause.getMessage(), cause);
         ctx.close();
     }
 
@@ -164,11 +221,13 @@ public class AeroDevice extends ChannelDuplexHandler {
     }
 
     private void reconnect(){
-        retry ++;
-        int interval = getReconnectInterval();
-        log.info("{}分钟后发起重连！",interval);
-        //重连间隔暂时写死
-        workers.schedule(connect, interval, TimeUnit.MINUTES);
+        if (!isLogin) {
+            retry ++;
+            int interval = getReconnectInterval();
+            log.info("{}分钟后发起重连！",interval);
+            //重连间隔暂时写死
+            workers.schedule(connect, interval, TimeUnit.MINUTES);
+        }
     }
 
     private void sendHeartbeat(ChannelHandlerContext ctx){
@@ -186,7 +245,8 @@ public class AeroDevice extends ChannelDuplexHandler {
 
     private void sendDetectCurrentData(ChannelHandlerContext ctx){
         ByteBuf coreBuffer = Unpooled.buffer(16+4);
-        coreBuffer.writeShort(1);
+        //与硬件保持一致
+        coreBuffer.writeShort(3);
         coreBuffer.writeShort(4*4);
         for(int i=0;i<4;i++){
             float singleData = new Random().nextFloat() * 2000 + 2000;
@@ -194,8 +254,8 @@ public class AeroDevice extends ChannelDuplexHandler {
         }
         byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.NONE,AeroConst.ENV,FormatType.TLV,RequestType.PUBLISH);
         ByteBuf data = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.CORE_DATA,attr,coreBuffer);
-        String hexMsg = AeroParser.buffer2Hex(data);
-        log.info("发送采集电流数据, hex: {}", hexMsg);
+//        String hexMsg = AeroParser.buffer2Hex(data);
+//        log.info("发送采集电流数据, hex: {}", hexMsg);
         ctx.writeAndFlush(data);
     }
 
@@ -203,11 +263,11 @@ public class AeroDevice extends ChannelDuplexHandler {
         ByteBuf coreBuffer = Unpooled.buffer(4+4);
         coreBuffer.writeShort(2);
         coreBuffer.writeShort(4);
-        coreBuffer.writeInt(983);
+        coreBuffer.writeInt(381);
         byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.NONE,AeroConst.ENV,FormatType.TLV,RequestType.PUBLISH);
         ByteBuf data = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.CORE_DATA,attr,coreBuffer);
-        String hexMsg = AeroParser.buffer2Hex(data);
-        log.info("发送采集频率数据, hex: {}", hexMsg);
+//        String hexMsg = AeroParser.buffer2Hex(data);
+//        log.info("发送采集频率数据, hex: {}", hexMsg);
         ctx.writeAndFlush(data);
     }
 

@@ -10,6 +10,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +26,9 @@ public class Client implements InitializingBean, DisposableBean {
 
     @Value("${remote.server.port}")
     int port;
+
+    @Autowired
+    EscapeHandler escapeHandler;
 
     Bootstrap client = new Bootstrap();
     NioEventLoopGroup workers = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors()*2);
@@ -44,7 +48,7 @@ public class Client implements InitializingBean, DisposableBean {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
-//                        pipeline.addLast("encoder", new Encoder());
+                        pipeline.addLast("encoder", escapeHandler);
                         pipeline.addLast("split", new FrameSplitHandler());
 //                        pipeline.addLast("validator", new Validator());
                         pipeline.addLast("head", new HeaderParseHandler());

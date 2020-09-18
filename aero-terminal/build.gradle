@@ -5,6 +5,21 @@ dependencies {
         exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
         exclude group: 'net.devh', module: 'grpc-server-spring-boot-starter'
     }
+
+    //aero-basic
+    compile (group: 'com.aero', name: 'aero-sdk-basic', version: '1.0-SNAPSHOT'){
+        exclude group: 'io.netty', module: 'netty-all'
+        exclude group: 'io.grpc', module: 'grpc-all'
+        exclude group: 'org.apache.commons', module: 'commons-lang3'
+    }
+
+    //aero-basic
+    compile (group: 'com.aero', name: 'sdk-measure-monitor', version: '1.0-SNAPSHOT'){
+        exclude group: 'io.netty', module: 'netty-all'
+        exclude group: 'io.grpc', module: 'grpc-all'
+        exclude group: 'org.apache.commons', module: 'commons-lang3'
+    }
+
     compile("org.springframework.boot:spring-boot-starter-web:${springbootVersion}") {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
     }

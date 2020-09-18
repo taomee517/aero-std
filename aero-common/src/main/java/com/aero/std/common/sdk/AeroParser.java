@@ -4,6 +4,8 @@ import com.aero.beans.base.Body;
 import com.aero.beans.base.Header;
 import com.aero.beans.constants.*;
 import com.aero.beans.content.DetectData;
+import com.aero.beans.content.DeviceInfo;
+import com.aero.beans.model.TLV;
 import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.utils.BytesUtil;
 import com.aero.std.common.utils.ValidateUtil;
@@ -13,6 +15,7 @@ import io.netty.util.ByteProcessor;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import static com.aero.std.common.constants.AeroConst.*;
@@ -209,12 +212,15 @@ public class AeroParser {
         int length = in.readShort();
         //消息内容
         ByteBuf content = in.retainedSlice(in.readerIndex(),length);
+//        byte[] coreContent = new byte[length];
+//        in.readBytes(coreContent);
+//        ByteBuf content = Unpooled.wrappedBuffer(coreContent);
         //校验
         byte[] crc = new byte[2];
         in.readBytes(crc);
         //帧尾
         byte end = in.readByte();
-        in.resetReaderIndex();
+//        in.resetReaderIndex();
 
         header.setImei(imei);
         header.setStatusCode(statusCode);
@@ -240,6 +246,7 @@ public class AeroParser {
         int length = content.readableBytes();
         if(length>0){
             Body body = new Body();
+            DeviceInfo deviceInfo = null;
             byte[] bytes = new byte[length];
             content.getBytes(0, bytes);
             body.setCoreData(bytes);
@@ -308,6 +315,44 @@ public class AeroParser {
 //                    }while (content.readableBytes()>0);
                     return body;
                 case HEART_BEAT:
+                case INTERVAL:
+                    deviceInfo = new DeviceInfo();
+                    while (content.readableBytes()>0) {
+                        TLV tlv = getNextTlv(content);
+                        switch(tlv.getType()) {
+                            case 1:
+                                int heartBeatInterval = BytesUtil.bytes2Int(tlv.getValue());
+                                deviceInfo.setHeartBeatInterval(heartBeatInterval);
+                                break;
+                            case 2:
+                                int detectInterval = BytesUtil.bytes2Int(tlv.getValue());
+                                deviceInfo.setDetectInterval(detectInterval);
+                                break;
+                            default:
+                                break;
+                        }
+                        body.setDeviceInfo(deviceInfo);
+                    }
+                    return body;
+                case SERVER_URL:
+                    deviceInfo = new DeviceInfo();
+                    while (content.readableBytes()>0) {
+                        TLV tlv = getNextTlv(content);
+                        switch(tlv.getType()) {
+                            case 1:
+                                String masterUrl = new String(tlv.getValue());
+                                deviceInfo.setMasterUrl(masterUrl);
+                                break;
+                            case 2:
+                                String slaveUrl = new String(tlv.getValue());
+                                deviceInfo.setSlaveUrl(slaveUrl);
+                                break;
+                            default:
+                                break;
+                        }
+                        body.setDeviceInfo(deviceInfo);
+                    }
+                    return body;
                 default:
                     break;
             }
@@ -317,13 +362,9 @@ public class AeroParser {
 
 
     public static String buffer2Hex(ByteBuf frame){
-        try {
-            byte[] bytes = new byte[frame.readableBytes()];
-            frame.readBytes(bytes);
-            return BytesUtil.bytes2HexWithBlank(bytes,true);
-        } finally {
-            frame.resetReaderIndex();
-        }
+        byte[] bytes = new byte[frame.readableBytes()];
+        frame.getBytes(frame.readerIndex(), bytes);
+        return BytesUtil.bytes2HexWithBlank(bytes,true);
     }
 
 
@@ -341,4 +382,12 @@ public class AeroParser {
 //        String newHex = buffer2Hex(out);
 //        System.out.println("转义后的结果：" + newHex);
 //    }
+
+    public static TLV getNextTlv(ByteBuf content){
+        int type = content.readShort();
+        int len = content.readShort();
+        byte[] value = new byte[len];
+        content.readBytes(value);
+        return new TLV(type, len, value);
+    }
 }

@@ -1,6 +1,7 @@
 package com.aero.beans.base;
 
 import com.aero.beans.content.DetectData;
+import com.aero.beans.content.DeviceInfo;
 import lombok.Data;
 
 /**
@@ -16,4 +17,5 @@ public class Body {
     private long rebootCount;
     private Object coreData;
     private DetectData detectData;
+    private DeviceInfo deviceInfo;
 }

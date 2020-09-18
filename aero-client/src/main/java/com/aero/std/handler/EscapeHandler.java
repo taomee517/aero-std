@@ -21,9 +21,10 @@ public class EscapeHandler extends MessageToByteEncoder {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
-        byte[] bytes = ((byte[]) msg);
-        ByteBuf buffer = Unpooled.wrappedBuffer(bytes);
-        showHexMsg(buffer,true);
+//        byte[] bytes = ((byte[]) msg);
+//        ByteBuf buffer = Unpooled.wrappedBuffer(bytes);
+        ByteBuf buffer = (ByteBuf) msg;
+//        showHexMsg(buffer,true);
         ByteBuf escapeBuffer = AeroParser.escape(buffer);
         showHexMsg(escapeBuffer,false);
         out.writeBytes(escapeBuffer);
