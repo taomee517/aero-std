@@ -321,11 +321,11 @@ public class AeroParser {
                         TLV tlv = getNextTlv(content);
                         switch(tlv.getType()) {
                             case 1:
-                                int heartBeatInterval = BytesUtil.bytes2Int(tlv.getValue());
+                                int heartBeatInterval = BytesUtil.twoBytes2Int(tlv.getValue());
                                 deviceInfo.setHeartBeatInterval(heartBeatInterval);
                                 break;
                             case 2:
-                                int detectInterval = BytesUtil.bytes2Int(tlv.getValue());
+                                int detectInterval = BytesUtil.twoBytes2Int(tlv.getValue());
                                 deviceInfo.setDetectInterval(detectInterval);
                                 break;
                             default:

@@ -100,20 +100,35 @@ public class BytesUtil {
         String imeiHex = ZeroFillUtil.zeroFillStr(imei,16);
         for(int i=0;i<imeiHex.length();i+=2){
             String sHex = imeiHex.substring(i,i+2);
-            byte b = Byte.parseByte(sHex,16);
-            result[i/2] = b;
+            int b = Integer.parseInt(sHex,16);
+            result[i/2] = (byte) b;
         }
         return result;
     }
 
-    public static String bytes2Imei(byte[] bytes){
+//    public static String bytes2Imei(byte[] bytes){
+//        StringBuilder sb = new StringBuilder();
+//        for(byte b: bytes){
+//            String ss = Integer.toHexString(b);
+//            ss = ZeroFillUtil.zeroFillStr(ss,2);
+//            sb.append(ss);
+//        }
+//        return StringUtils.removeStart(sb.toString(),"0");
+//    }
+
+    public static String bytes2Imei(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
-        for(byte b: bytes){
-            String ss = Integer.toHexString(b);
-            ss = ZeroFillUtil.zeroFillStr(ss,2);
+        byte[] var2 = bytes;
+        int var3 = bytes.length;
+
+        for(int var4 = 0; var4 < var3; ++var4) {
+            byte b = var2[var4];
+            String ss = Integer.toHexString(b&0xff);
+            ss = ZeroFillUtil.zeroFillStr(ss, 2);
             sb.append(ss);
         }
-        return StringUtils.removeStart(sb.toString(),"0");
+
+        return StringUtils.removeStart(sb.toString(), "0");
     }
 
     public static String toShowString(byte[] bytes){

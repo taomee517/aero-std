@@ -21,7 +21,10 @@ public class DataSource {
     public void loadDevices() throws Exception {
 //        List<String> snList = DeviceSourceUtil.getColumnData(devicesPath);
 
-        List<String> imeis = Arrays.asList("813463346541368");
+//        List<String> imeis = Arrays.asList("813463346541368");
+//        List<String> imeis = Arrays.asList("813463346584699");
+        List<String> imeis = Arrays.asList("813463346584610");
+//        List<String> imeis = Arrays.asList("813463346541312");
 
         for (String imei : imeis) {
             AeroDevice device = new AeroDevice(imei, EnvType.valueOf(env));

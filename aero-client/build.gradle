@@ -2,7 +2,7 @@ dependencies {
     //引入项目内的其它模块
     compile project(":aero-common")
 
-    compile("org.springframework.boot:spring-boot-starter-web:${springbootVersion}") {
+    compile("org.springframework.boot:spring-boot-starter:${springbootVersion}") {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
     }
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2', version: "${springbootVersion}"

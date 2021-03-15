@@ -53,7 +53,7 @@ public class Client implements InitializingBean, DisposableBean {
 //                        pipeline.addLast("validator", new Validator());
                         pipeline.addLast("head", new HeaderParseHandler());
                         pipeline.addLast("core", new CoreParseHandler());
-                        pipeline.addLast("idle", new IdleStateHandler(30000,0,0, TimeUnit.MILLISECONDS));
+                        pipeline.addLast("idle", new IdleStateHandler(20,0, 0, TimeUnit.SECONDS));
                         pipeline.addLast("device", ch.attr(AeroDevice.DEVICE).get());
                     }
                 });

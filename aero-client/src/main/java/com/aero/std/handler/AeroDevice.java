@@ -22,6 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -138,6 +140,8 @@ public class AeroDevice extends ChannelDuplexHandler {
             log.info("登录回复, statusCode = {}, timestamp = {}", statusCode, m.getBody().getServerUtc());
             if(StatusCode.SUCCESS.equals(statusCode)){
                 isLogin = true;
+//                sendMessage(ctx);
+                sendPullCmd(ctx);
             }
         }
 
@@ -169,6 +173,9 @@ public class AeroDevice extends ChannelDuplexHandler {
                     case INTERVAL:
                         log.info("收到设置频率指令：heart = {}, collect = {}", deviceInfo.getHeartBeatInterval(), deviceInfo.getDetectInterval());
                         break;
+                    case EXCITATION_PARAMS:
+                        log.info("收到设置激振参数指令");
+                        break;
                     case LOWER_THRESHOLD:
                         break;
                 }
@@ -194,20 +201,60 @@ public class AeroDevice extends ChannelDuplexHandler {
         if(evt instanceof IdleStateEvent){
             IdleStateEvent idleEvt = ((IdleStateEvent) evt);
             if(idleEvt.state().equals(IdleState.READER_IDLE)){
+                sendPullCmd(ctx);
 //                sendHeartbeat(ctx);
-                boolean flag = new Random().nextBoolean();
-                if (flag) {
-                    sendDetectCurrentData(ctx);
-                }else {
-                    sendDetectFrequencyData(ctx);
-                }
-
-//                String hex = "7e 08 13 46 33 46 54 13 68 01 00 84 20 00 00 0f 00 00 00 08 00 02 00 04 00 00 01 7d 01 be 7e";
-//                byte[] bytes = BytesUtil.hex2Bytes(hex);
-//                ByteBuf buf = Unpooled.wrappedBuffer(bytes);
-//                ctx.writeAndFlush(buf);
+//                sendMessage(ctx);
             }
         }
+    }
+
+    private void sendPullCmd(ChannelHandlerContext ctx){
+        byte[] attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.NONE,AeroConst.ENV, FormatType.TLV,RequestType.PUBLISH);
+        ByteBuf infoBuf = Unpooled.buffer();
+        infoBuf.writeShort(1);
+        infoBuf.writeShort(8);
+        infoBuf.writeBytes(BytesUtil.imei2Bytes(imei));
+        infoBuf.writeShort(2);
+        infoBuf.writeShort(8);
+        infoBuf.writeBytes(BytesUtil.imei2Bytes(imei.replace("8","7")));
+        infoBuf.writeShort(4);
+        infoBuf.writeShort(1);
+        infoBuf.writeByte(1);
+        ByteBuf infoPub = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.DEVICE_INFO,attr,infoBuf);
+        ctx.writeAndFlush(infoPub);
+
+        byte[] cacheCmdAttr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.NONE,AeroConst.ENV, FormatType.TLV,RequestType.EXECUTE);
+        ByteBuf cacheCmdBuf = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.PULL_CMD,cacheCmdAttr,null);
+        ctx.writeAndFlush(cacheCmdBuf);
+    }
+
+    private void sendMessage(ChannelHandlerContext ctx) {
+        //                boolean flag = new Random().nextBoolean();
+//                if (flag) {
+//                    sendDetectCurrentData(ctx);
+//                }else {
+//                    sendDetectFrequencyData(ctx);
+//                }
+
+//                String hex = "7e 08 13 46 33 46 54 13 68 01 00 84 20 00 00 0f 00 00 00 08 00 02 00 04 00 00 01 7d 01 be 7e";
+        //数据
+        String hex1 = "7e 08 13 46 33 46 54 13 10 01 00 84 20 00 00 00 00 01 00 44 00 03 00 40 43 5e 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 42 de 33 33 43 5e 33 33 3d 88 7e";
+        //电池
+//        String hex2 = "7e 08 13 46 33 46 54 13 10 01 00 84 10 02 00 00 00 04 00 06 00 02 00 02 00 00 e1 f4 7e";
+        String hex2 = "7e 08 13 46 33 46 54 13 10 01 00 84 10 02 00 00 00 04 00 06 00 02 00 02 00 00 e1 f4 7e";
+        //基础信息
+//        String hex3 = "7e 08 13 46 33 46 54 13 10 01 00 84 10 01 00 00 00 03 00 0c 00 01 00 08 08 13 46 33 46 54 13 10 6b b2 7e";
+//        String hex3 = "7e 08 13 46 33 46 54 13 10 01 00 84 10 01 00 00 00 03 00 3a 00 01 00 08 08 13 46 33 46 54 13 10 00 02 00 15 00 38 36 30 34 34 36 31 30 31 39 38 30 35 32 34 30 35 38 00 00 00 03 00 0c 00 33 31 31 34 35 32 34 37 38 00 72 00 04 00 01 01 a6 1b 7e";
+        String hex3 = "7e 08 13 46 33 46 54 13 10 01 00 84 10 01 00 00 00 03 00 3a 00 01 00 08 08 13 46 33 46 54 13 10 00 02 00 15 00 38 36 30 34 34 36 31 30 31 39 38 30 35 32 34 30 35 38 00 00 00 03 00 0c 00 30 30 30 30 30 30 30 30 30 00 72 00 04 00 01 01 e5 f5 7e";
+        //信号
+        String hex4 = "7e 08 13 46 33 46 54 13 10 01 00 84 10 05 00 00 00 05 00 06 00 01 00 02 00 0d f3 77 7e";
+
+        List<String> strings = Arrays.asList(hex1, hex2, hex3, hex4);
+        int i = new Random().nextInt(strings.size());
+//        int i =  1;
+        byte[] bytes = BytesUtil.hex2Bytes(strings.get(i));
+        ByteBuf buf = Unpooled.wrappedBuffer(bytes);
+        ctx.writeAndFlush(buf);
     }
 
     @Override
