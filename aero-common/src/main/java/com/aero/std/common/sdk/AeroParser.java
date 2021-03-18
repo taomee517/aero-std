@@ -5,6 +5,7 @@ import com.aero.beans.base.Header;
 import com.aero.beans.constants.*;
 import com.aero.beans.content.DetectData;
 import com.aero.beans.content.DeviceInfo;
+import com.aero.beans.content.OtaInfo;
 import com.aero.beans.model.TLV;
 import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.utils.BytesUtil;
@@ -351,6 +352,56 @@ public class AeroParser {
                                 break;
                         }
                         body.setDeviceInfo(deviceInfo);
+                    }
+                    return body;
+                case UPGRADE:
+                    OtaInfo ota = new OtaInfo();
+                    while (content.readableBytes()>0) {
+                        TLV tlv = getNextTlv(content);
+                        switch(tlv.getType()) {
+                            case 1:
+                                String hardware = new String(tlv.getValue());
+                                ota.setHardware(hardware);
+                                break;
+                            case 2:
+                                String hardwareVersion = new String(tlv.getValue());
+                                ota.setHardwareVersion(hardwareVersion);
+                                break;
+                            case 3:
+                                String software = new String(tlv.getValue());
+                                ota.setSoftware(software);
+                                break;
+                            case 4:
+                                String softwareVersion = new String(tlv.getValue());
+                                ota.setSoftwareVersion(softwareVersion);
+                                break;
+                            default:
+                                break;
+                        }
+                        body.setOtaInfo(ota);
+                    }
+                    return body;
+                case UPGRADE_FILE:
+                    ota = new OtaInfo();
+                    while (content.readableBytes()>0) {
+                        TLV tlv = getNextTlv(content);
+                        switch(tlv.getType()) {
+                            case 1:
+                                Integer fileLen = BytesUtil.bytes2Int(tlv.getValue());
+                                ota.setFileLength(fileLen);
+                                break;
+                            case 2:
+                                String md5 = new String(tlv.getValue());
+                                ota.setMd5(md5);
+                                break;
+                            case 4:
+                                String url = new String(tlv.getValue());
+                                ota.setUrl(url);
+                                break;
+                            default:
+                                break;
+                        }
+                        body.setOtaInfo(ota);
                     }
                     return body;
                 default:

@@ -2,6 +2,7 @@ package com.aero.beans.base;
 
 import com.aero.beans.content.DetectData;
 import com.aero.beans.content.DeviceInfo;
+import com.aero.beans.content.OtaInfo;
 import lombok.Data;
 
 /**
@@ -18,4 +19,5 @@ public class Body {
     private Object coreData;
     private DetectData detectData;
     private DeviceInfo deviceInfo;
+    private OtaInfo otaInfo;
 }

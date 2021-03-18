@@ -4,6 +4,7 @@ import com.aero.beans.base.Body;
 import com.aero.beans.base.Message;
 import com.aero.beans.constants.*;
 import com.aero.beans.content.DeviceInfo;
+import com.aero.beans.content.OtaInfo;
 import com.aero.std.common.constants.AeroConst;
 import com.aero.std.common.sdk.AeroMsgBuilder;
 import com.aero.std.common.sdk.AeroParser;
@@ -185,6 +186,24 @@ public class AeroDevice extends ChannelDuplexHandler {
                 ctx.writeAndFlush(settingAck);
                 break;
             case EXECUTE:
+                switch (fun){
+                    case UPGRADE:
+                        OtaInfo info = m.getBody().getOtaInfo();
+                        log.info("收到设备升级指令, soft = {}, version = {}", info.getSoftware(), info.getSoftwareVersion());
+                        ackType = RequestType.getRequestType(m.getHeader().getRequest().getAckCode());
+                        ByteBuf buf = Unpooled.buffer();
+                        buf.writeShort(1);
+                        buf.writeShort(1);
+                        buf.writeByte(1);
+                        attr = AeroMsgBuilder.buildAttribute(AeroConst.PROTOCOL_VERSION,StatusCode.SUCCESS,AeroConst.ENV, FormatType.TLV, RequestType.EXECUTE);
+                        ByteBuf exeAck = AeroMsgBuilder.buildRequestMessage(imei,FunctionType.UPGRADE_CONFIRM,attr,buf);
+                        ctx.writeAndFlush(exeAck);
+                        break;
+                    case UPGRADE_FILE:
+                        OtaInfo otaInfo = m.getBody().getOtaInfo();
+                        log.info("收到设备升级文件信息, length = {}, md5 = {}, url = {}", otaInfo.getFileLength(), otaInfo.getMd5(), otaInfo.getUrl());
+                        break;
+                }
             case PUBLISH:
                 break;
         }
@@ -261,6 +280,12 @@ public class AeroDevice extends ChannelDuplexHandler {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         log.error("发生异常：" + cause.getMessage(), cause);
         ctx.close();
+    }
+
+    private void writeTLV(ByteBuf buf, int index, byte[] bytes) {
+        buf.writeShort(index);
+        buf.writeShort(bytes.length);
+        buf.writeBytes(bytes);
     }
 
     private int getReconnectInterval(){
